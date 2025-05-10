@@ -1,18 +1,19 @@
 use anyhow::Result;
-
-use std::collections::HashSet;
-
+use hex::ToHex;
 use ripemd::{Digest, Ripemd160};
 use sha2::Sha256;
-use zewif::{u160, TxId};
+use std::collections::HashSet;
+use zewif::TxId;
 
-use crate::ZcashdWallet;
+use crate::{
+    zcashd_wallet::{transparent::{KeyId, ScriptId}, u160, RecipientAddress, WalletTx}, ZcashdWallet
+};
 
 /// Extract all addresses involved in a transaction
 pub fn extract_transaction_addresses(
     wallet: &ZcashdWallet,
     tx_id: TxId,
-    tx: &crate::WalletTx,
+    tx: &WalletTx,
 ) -> Result<HashSet<String>> {
     let mut addresses = HashSet::new();
     let mut is_change_transaction = false;
@@ -30,23 +31,23 @@ pub fn extract_transaction_addresses(
 
             // Add the recipient address based on the type
             match &recipient.recipient_address {
-                crate::RecipientAddress::Sapling(addr) => {
+                RecipientAddress::Sapling(addr) => {
                     let addr_str = addr.to_string(wallet.network());
                     addresses.insert(addr_str.clone());
                     addresses.insert(format!("sapling_addr:{}", addr_str));
                 }
-                crate::RecipientAddress::Orchard(addr) => {
+                RecipientAddress::Orchard(addr) => {
                     let addr_str = addr.to_string(wallet.network());
                     addresses.insert(addr_str.clone());
                     addresses.insert(format!("orchard_addr:{}", addr_str));
                 }
-                crate::RecipientAddress::KeyId(key_id) => {
+                RecipientAddress::KeyId(key_id) => {
                     // Convert P2PKH key hash to a Zcash address
                     let addr_str = key_id.to_string(wallet.network());
                     addresses.insert(addr_str.clone());
                     addresses.insert(format!("transparent_addr:{}", addr_str));
                 }
-                crate::RecipientAddress::ScriptId(script_id) => {
+                RecipientAddress::ScriptId(script_id) => {
                     // Convert P2SH script hash to a Zcash address
                     let addr_str = script_id.to_string(wallet.network());
                     addresses.insert(addr_str.clone());
@@ -55,168 +56,73 @@ pub fn extract_transaction_addresses(
             }
 
             // Check if this is an internal address (change transaction)
-            if !recipient.unified_address.is_empty() {
-                if let Some(unified_accounts) = wallet.unified_accounts() {
-                    // Check if this unified address belongs to our wallet
-                    for addr_metadata in unified_accounts.address_metadata.values() {
-                        // If we find this address in our metadata, it's likely a change address
-                        if format!("{}", addr_metadata.key_id) == recipient.unified_address {
-                            is_change_transaction = true;
-                            addresses.insert(format!("change:{}", recipient.unified_address));
-                            break;
-                        }
-                    }
-                }
-            }
+            // FIXME: the following is not a valid way to detect change.
+            //if !recipient.unified_address.is_empty() {
+            //    if let Some(unified_accounts) = wallet.unified_accounts() {
+            //        // Check if this unified address belongs to our wallet
+            //        for addr_metadata in unified_accounts.address_metadata {
+            //            // If we find this address in our metadata, it's likely a change address
+            //            if format!("{}", addr_metadata.key_id) == recipient.unified_address {
+            //                is_change_transaction = true;
+            //                addresses.insert(format!("change:{}", recipient.unified_address));
+            //                break;
+            //            }
+            //        }
+            //    }
+            //}
         }
     }
 
     // For transparent inputs, extract addresses from the script signatures
-    for tx_in in tx.vin() {
-        // Track the previous transaction
-        let txid_str = format!("{}", tx_in.prevout().txid());
-        let input_addr = format!("input:{}:{}", txid_str, tx_in.prevout().vout());
-        addresses.insert(input_addr);
+    if let Some(t_bundle) = tx.transaction().transparent_bundle() {
+        for tx_in in t_bundle.vin.iter() {
+            // Track the previous transaction
+            let txid_str = format!("{}", tx_in.prevout.txid());
+            let input_addr = format!("input:{}:{}", txid_str, tx_in.prevout.n());
+            addresses.insert(input_addr);
 
-        // Extract potential P2PKH or P2SH addresses from script signatures
-        let script_data = tx_in.script_sig();
+            // Extract potential P2PKH or P2SH addresses from script signatures
+            let script_data = tx_in.script_sig.0.clone();
 
-        // For P2PKH signatures, extract the pubkey
-        if script_data.len() > 33 {
-            // Check for compressed pubkey
-            let potential_pubkey = &script_data[script_data.len() - 33..];
-            if potential_pubkey[0] == 0x02 || potential_pubkey[0] == 0x03 {
-                // Hash the pubkey to get the pubkey hash
-                let mut sha256 = Sha256::new();
-                sha256.update(potential_pubkey);
-                let sha256_result = sha256.finalize();
+            // For P2PKH signatures, extract the pubkey
+            if script_data.len() > 33 {
+                // Check for compressed pubkey
+                let potential_pubkey = &script_data[script_data.len() - 33..];
+                if potential_pubkey[0] == 0x02 || potential_pubkey[0] == 0x03 {
+                    // Hash the pubkey to get the pubkey hash
+                    let mut sha256 = Sha256::new();
+                    sha256.update(potential_pubkey);
+                    let sha256_result = sha256.finalize();
 
-                let mut ripemd160 = Ripemd160::new();
-                ripemd160.update(sha256_result);
-                let pubkey_hash = ripemd160.finalize();
+                    let mut ripemd160 = Ripemd160::new();
+                    ripemd160.update(sha256_result);
+                    let pubkey_hash = ripemd160.finalize();
 
-                // Create a transparent P2PKH address
-                let key_id = crate::KeyId::from(
-                    u160::from_slice(&pubkey_hash[..]).expect("Creating u160 from RIPEMD160 hash"),
-                );
-                let addr_str = key_id.to_string(wallet.network());
-                addresses.insert(addr_str.clone());
-                addresses.insert(format!("transparent_spend:{}", addr_str));
+                    // Create a transparent P2PKH address
+                    let key_id = KeyId::from(
+                        u160::from_slice(&pubkey_hash[..])
+                            .expect("Creating u160 from RIPEMD160 hash"),
+                    );
+                    let addr_str = key_id.to_string(wallet.network());
+                    addresses.insert(addr_str.clone());
+                    addresses.insert(format!("transparent_spend:{}", addr_str));
 
-                // Check if this is one of our keys to better determine ownership
-                for key in wallet.keys().keypairs() {
-                    // Cannot directly convert PubKey to Address, so we'll check differently
-                    // Get the address from our address book that might match this key
-                    for (address, _) in wallet.address_names().iter() {
-                        if address.to_string() == addr_str {
-                            addresses.insert(format!("our_key:{}", addr_str));
+                    // Check if this is one of our keys to better determine ownership
+                    for key in wallet.keys().keypairs() {
+                        // Cannot directly convert PubKey to Address, so we'll check differently
+                        // Get the address from our address book that might match this key
+                        for (address, _) in wallet.address_names().iter() {
+                            if address.to_string() == addr_str {
+                                addresses.insert(format!("our_key:{}", addr_str));
 
-                            // If we have an HD path, we can determine if this is change
-                            if let Some(hd_path) = key.metadata().hd_keypath() {
-                                if hd_path.contains("/1'/") || hd_path.contains("/1/") {
-                                    // This is an internal key path, so this is likely change
-                                    is_change_transaction = true;
-                                    addresses.insert(format!("change_key:{}", addr_str));
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // For transparent outputs, extract addresses
-    for (vout_idx, tx_out) in tx.vout().iter().enumerate() {
-        let script_data = tx_out.script_pub_key();
-        let mut output_address = String::new();
-
-        // P2PKH detection
-        if script_data.len() >= 25 && script_data[0] == 0x76 && script_data[1] == 0xA9 {
-            if script_data[23] == 0x88 && script_data[24] == 0xAC {
-                // Extract the pubkey hash and create an address
-                let pubkey_hash = &script_data[3..23];
-                let key_id = crate::KeyId::from(
-                    u160::from_slice(pubkey_hash).expect("Creating u160 from pubkey hash"),
-                );
-                let addr_str = key_id.to_string(wallet.network());
-                addresses.insert(addr_str.clone());
-                addresses.insert(format!("transparent_output:{}", addr_str));
-                output_address = addr_str;
-            }
-        }
-        // P2SH detection
-        else if script_data.len() >= 23 && script_data[0] == 0xA9 && script_data[22] == 0x87 {
-            // Extract the script hash and create an address
-            let script_hash = &script_data[2..22];
-            let script_id = crate::ScriptId::from(
-                u160::from_slice(script_hash).expect("Creating u160 from script hash"),
-            );
-            let addr_str = script_id.to_string(wallet.network());
-            addresses.insert(addr_str.clone());
-            addresses.insert(format!("transparent_script_output:{}", addr_str));
-            output_address = addr_str;
-        }
-
-        // Check if this output is change
-        if !output_address.is_empty() {
-            // If this is our address and tx is from us, this is likely change
-            if tx.is_from_me() && wallet.address_names().keys().any(|a| a.to_string() == output_address) {
-                // Check if this address isn't in our address book (typical of change addresses)
-                if is_likely_change_output(wallet, &output_address) {
-                    is_change_transaction = true;
-                    addresses.insert(format!("change_output:{}", output_address));
-                }
-            }
-        }
-
-        // Track all outputs
-        let output_id = format!("output:{}:{}", tx_id, vout_idx);
-        addresses.insert(output_id);
-    }
-
-    // Process Sapling spends and outputs with improved nullifier tracking
-    match tx.sapling_bundle() {
-        crate::SaplingBundle::V4(bundle_v4) => {
-            for spend in bundle_v4.spends() {
-                // Track the nullifier
-                let nullifier_hex = format!("{}", spend.nullifier());
-                addresses.insert(format!("sapling_nullifier:{}", nullifier_hex));
-
-                // If we have note data for this nullifier, find the address
-                if let Some(sapling_note_data) = tx.sapling_note_data() {
-                    for note_data in sapling_note_data.values() {
-                        if let Some(nullifier) = note_data.nullifer() {
-                            if nullifier == spend.nullifier() {
-                                // Find the address and tag it as a spend
-                                for (addr, ivk) in wallet.sapling_z_addresses() {
-                                    if note_data.incoming_viewing_key() == ivk {
-                                        let addr_str = addr.to_string(wallet.network());
-                                        addresses.insert(addr_str.clone());
-                                        addresses.insert(format!("sapling_spend:{}", addr_str));
-                                        break;
+                                // If we have an HD path, we can determine if this is change
+                                if let Some(hd_path) = key.metadata().hd_keypath() {
+                                    if hd_path.contains("/1'/") || hd_path.contains("/1/") {
+                                        // This is an internal key path, so this is likely change
+                                        is_change_transaction = true;
+                                        addresses.insert(format!("change_key:{}", addr_str));
                                     }
                                 }
-                            }
-                        }
-                    }
-                }
-            }
-
-            for output in bundle_v4.outputs() {
-                // Track the commitment
-                let cm_hex = hex::encode(output.cmu().as_ref() as &[u8]);
-                addresses.insert(format!("sapling_commitment:{}", cm_hex));
-
-                // If we have note data for this output, find the address
-                if let Some(sapling_note_data) = tx.sapling_note_data() {
-                    for note_data in sapling_note_data.values() {
-                        for (addr, ivk) in wallet.sapling_z_addresses() {
-                            if note_data.incoming_viewing_key() == ivk {
-                                let addr_str = addr.to_string(wallet.network());
-                                addresses.insert(addr_str.clone());
-                                addresses.insert(format!("sapling_receive:{}", addr_str));
                                 break;
                             }
                         }
@@ -224,24 +130,106 @@ pub fn extract_transaction_addresses(
                 }
             }
         }
-        crate::SaplingBundle::V5(bundle_v5) => {
-            for spend in bundle_v5.shielded_spends() {
-                let nullifier_hex = hex::encode(spend.nullifier().as_ref() as &[u8]);
-                addresses.insert(format!("sapling_nullifier_v5:{}", nullifier_hex));
 
-                // Also do nullifier-to-address mapping if possible
-                for addr in wallet.sapling_z_addresses().keys() {
-                    let addr_str = addr.to_string(wallet.network());
-                    // Check if this nullifier belongs to our address
-                    if is_nullifier_for_address(wallet, &nullifier_hex, &addr_str) {
-                        addresses.insert(format!("sapling_spend_v5:{}", addr_str));
+        // For transparent outputs, extract addresses
+        for (vout_idx, tx_out) in t_bundle.vout.iter().enumerate() {
+            let script_data = tx_out.script_pubkey.0.clone();
+            let mut output_address = String::new();
+
+            // P2PKH detection
+            if script_data.len() >= 25 && script_data[0] == 0x76 && script_data[1] == 0xA9 {
+                if script_data[23] == 0x88 && script_data[24] == 0xAC {
+                    // Extract the pubkey hash and create an address
+                    let pubkey_hash = &script_data[3..23];
+                    let key_id = KeyId::from(
+                        u160::from_slice(pubkey_hash).expect("Creating u160 from pubkey hash"),
+                    );
+                    let addr_str = key_id.to_string(wallet.network());
+                    addresses.insert(addr_str.clone());
+                    addresses.insert(format!("transparent_output:{}", addr_str));
+                    output_address = addr_str;
+                }
+            }
+            // P2SH detection
+            else if script_data.len() >= 23 && script_data[0] == 0xA9 && script_data[22] == 0x87 {
+                // Extract the script hash and create an address
+                let script_hash = &script_data[2..22];
+                let script_id = ScriptId::from(
+                    u160::from_slice(script_hash).expect("Creating u160 from script hash"),
+                );
+                let addr_str = script_id.to_string(wallet.network());
+                addresses.insert(addr_str.clone());
+                addresses.insert(format!("transparent_script_output:{}", addr_str));
+                output_address = addr_str;
+            }
+
+            // Check if this output is change
+            if !output_address.is_empty() {
+                // If this is our address and tx is from us, this is likely change
+                if tx.is_from_me()
+                    && wallet
+                        .address_names()
+                        .keys()
+                        .any(|a| a.to_string() == output_address)
+                {
+                    // Check if this address isn't in our address book (typical of change addresses)
+                    if is_likely_change_output(wallet, &output_address) {
+                        is_change_transaction = true;
+                        addresses.insert(format!("change_output:{}", output_address));
                     }
                 }
             }
 
-            for output in bundle_v5.shielded_outputs() {
-                let cm_hex = hex::encode(output.cmu().as_ref() as &[u8]);
-                addresses.insert(format!("sapling_commitment_v5:{}", cm_hex));
+            // Track all outputs
+            let output_id = format!("output:{}:{}", tx_id, vout_idx);
+            addresses.insert(output_id);
+        }
+    }
+
+    // Process Sapling spends and outputs with improved nullifier tracking
+    if let Some(bundle) = tx.transaction().sapling_bundle() {
+        for spend in bundle.shielded_spends() {
+            // Track the nullifier
+            let nullifier_hex: String = spend.nullifier().encode_hex();
+            addresses.insert(format!("sapling_nullifier:{}", nullifier_hex));
+
+            // If we have note data for this nullifier, find the address
+            if let Some(sapling_note_data) = tx.sapling_note_data() {
+                for note_data in sapling_note_data.values() {
+                    if let Some(nullifier) = note_data.nullifier() {
+                        if nullifier.as_slice() == spend.nullifier().as_ref() {
+                            // Find the address and tag it as a spend
+                            for (addr, ivk) in wallet.sapling_z_addresses() {
+                                if note_data.incoming_viewing_key() == ivk {
+                                    let addr_str = addr.to_string(wallet.network());
+                                    addresses.insert(addr_str.clone());
+                                    addresses.insert(format!("sapling_spend:{}", addr_str));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for output in bundle.shielded_outputs() {
+            // Track the commitment
+            let cm_hex = hex::encode(output.cmu().to_bytes());
+            addresses.insert(format!("sapling_commitment:{}", cm_hex));
+
+            // If we have note data for this output, find the address
+            if let Some(sapling_note_data) = tx.sapling_note_data() {
+                for note_data in sapling_note_data.values() {
+                    for (addr, ivk) in wallet.sapling_z_addresses() {
+                        if note_data.incoming_viewing_key() == ivk {
+                            let addr_str = addr.to_string(wallet.network());
+                            addresses.insert(addr_str.clone());
+                            addresses.insert(format!("sapling_receive:{}", addr_str));
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -260,7 +248,7 @@ pub fn extract_transaction_addresses(
                     addresses.insert(format!("sapling_note:{}", outpoint_str));
 
                     // If this note has a nullifier, it's been spent
-                    if note_data.nullifer().is_some() {
+                    if note_data.nullifier().is_some() {
                         addresses.insert(format!("sapling_spent_note:{}", addr_str));
                     } else {
                         addresses.insert(format!("sapling_unspent_note:{}", addr_str));
@@ -274,32 +262,36 @@ pub fn extract_transaction_addresses(
     // Orchard action processing is done after sapling, so we don't need to process sapling note data again here
 
     // Improved Orchard action processing
-    if let Some(orchard_bundle) = tx.orchard_bundle().inner() {
-        for (idx, action) in orchard_bundle.actions.iter().enumerate() {
-            // Track nullifiers
-            let nullifier_hex = hex::encode(action.nf_old());
+    if let Some(orchard_bundle) = tx.transaction().orchard_bundle() {
+        for (idx, action) in (0u32..).zip(orchard_bundle.actions().into_iter()) {
+            let nullifier_hex = hex::encode(action.nullifier().to_bytes());
             addresses.insert(format!("orchard_nullifier:{}", nullifier_hex));
 
             // Track commitments
-            let commitment_hex = hex::encode(action.cmx());
+            let commitment_hex = hex::encode(action.cmx().to_bytes());
             addresses.insert(format!("orchard_commitment:{}", commitment_hex));
 
             // Extract additional metadata if available
             if let Some(orchard_meta) = tx.orchard_tx_meta() {
-                if let Some(action_data) = orchard_meta.action_data(idx as u32) {
+                if let Some(ivk) = orchard_meta.receiving_key(idx) {
                     // Track action by index
                     addresses.insert(format!("orchard_action:{}:{}", tx_id, idx));
 
                     // Instead of trying to access note data directly, just track the action
                     // Action data typically contains commitment and value information
-                    addresses.insert(format!("orchard_action_data:{}", hex::encode(action_data.as_ref() as &[u8])));
-
+                    addresses.insert(format!(
+                        "orchard_action_data:{}",
+                        hex::encode(&ivk.to_bytes()[..])
+                    ));
 
                     // If we have recipient data from the transaction, link it
                     if let Some(recipients) = wallet.send_recipients().get(&tx_id) {
                         for recipient in recipients {
-                            if let crate::RecipientAddress::Orchard(addr) = &recipient.recipient_address {
-                                addresses.insert(format!("orchard_recipient:{}", addr.to_string(wallet.network())));
+                            if let RecipientAddress::Orchard(addr) = &recipient.recipient_address {
+                                addresses.insert(format!(
+                                    "orchard_recipient:{}",
+                                    addr.to_string(wallet.network())
+                                ));
                             }
                         }
                     }
@@ -321,7 +313,13 @@ pub fn extract_transaction_addresses(
     }
 
     // If the transaction is marked as "from me" but we don't have specific addresses
-    if tx.is_from_me() && !addresses.iter().any(|a| a.starts_with("transparent_spend:") || a.starts_with("sapling_spend:") || a.starts_with("orchard_nullifier:")) {
+    if tx.is_from_me()
+        && !addresses.iter().any(|a| {
+            a.starts_with("transparent_spend:")
+                || a.starts_with("sapling_spend:")
+                || a.starts_with("orchard_nullifier:")
+        })
+    {
         // Add all our addresses as potential sources, but mark them as uncertain
         for addr in wallet.sapling_z_addresses().keys() {
             let addr_str = addr.to_string(wallet.network());
@@ -348,14 +346,20 @@ fn is_likely_change_output(wallet: &ZcashdWallet, address: &str) -> bool {
     // 3. Generated from internal key paths (m/44'/x'/y'/1/...)
 
     // Check if the address belongs to our wallet but has no name or purpose in the address book
-    let has_address = wallet.address_names().keys().any(|a| a.to_string() == address);
+    let has_address = wallet
+        .address_names()
+        .keys()
+        .any(|a| a.to_string() == address);
 
     if !has_address {
         return false;
     }
 
     // Check if this address has a name or purpose
-    let address_obj = wallet.address_names().keys().find(|a| a.to_string() == address);
+    let address_obj = wallet
+        .address_names()
+        .keys()
+        .find(|a| a.to_string() == address);
     if let Some(addr) = address_obj {
         // If the address has a name or purpose, it's probably not change
         if let Some(name) = wallet.address_names().get(addr) {

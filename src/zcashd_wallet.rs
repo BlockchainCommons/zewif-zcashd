@@ -1,12 +1,39 @@
-use std::collections::HashMap;
+use zewif::mod_use;
 
+mod_use!(address);
+mod_use!(block_locator);
+mod_use!(client_version);
+mod_use!(compact_size);
+mod_use!(key_metadata);
+mod_use!(incremental_merkle_tree);
+mod_use!(incremental_witness);
+mod_use!(mnemonic_hd_chain);
+mod_use!(network_info);
+mod_use!(parseable_types);
+mod_use!(receiver_type);
+mod_use!(recipient_address);
+mod_use!(recipient_mapping);
+mod_use!(seconds_since_epoch);
+mod_use!(unified_accounts);
+mod_use!(unified_account_metadata);
+mod_use!(unified_address_metadata);
+mod_use!(u160_type);
+mod_use!(u252_type);
+mod_use!(u256_type);
+mod_use!(wallet_tx);
+
+pub mod orchard;
+pub mod sapling;
+pub mod sprout;
+pub mod transparent;
+
+use std::collections::HashMap;
 use zewif::{Bip39Mnemonic, Network, TxId, sapling::SaplingIncomingViewingKey};
 
-use super::{
-    Address, BlockLocator, ClientVersion, KeyPoolEntry, Keys, MnemonicHDChain, NetworkInfo,
-    OrchardNoteCommitmentTree, PubKey, RecipientMapping, SaplingKeys, SaplingZPaymentAddress,
-    SproutKeys, UnifiedAccounts, WalletTx,
-};
+use orchard::OrchardNoteCommitmentTree;
+use sapling::{SaplingKeys, SaplingZPaymentAddress};
+use sprout::SproutKeys;
+use transparent::{KeyPoolEntry, Keys, PubKey};
 
 #[derive(Debug)]
 pub struct ZcashdWallet {
@@ -29,7 +56,7 @@ pub struct ZcashdWallet {
     send_recipients: HashMap<TxId, Vec<RecipientMapping>>,
     sprout_keys: Option<SproutKeys>,
     transactions: HashMap<TxId, WalletTx>,
-    unified_accounts: Option<UnifiedAccounts>,
+    unified_accounts: UnifiedAccounts,
     witnesscachesize: i64,
 }
 
@@ -55,7 +82,7 @@ impl ZcashdWallet {
         send_recipients: HashMap<TxId, Vec<RecipientMapping>>,
         sprout_keys: Option<SproutKeys>,
         transactions: HashMap<TxId, WalletTx>,
-        unified_accounts: Option<UnifiedAccounts>,
+        unified_accounts: UnifiedAccounts,
         witnesscachesize: i64,
     ) -> Self {
         ZcashdWallet {
@@ -160,8 +187,8 @@ impl ZcashdWallet {
         &self.transactions
     }
 
-    pub fn unified_accounts(&self) -> Option<&UnifiedAccounts> {
-        self.unified_accounts.as_ref()
+    pub fn unified_accounts(&self) -> &UnifiedAccounts {
+        &self.unified_accounts
     }
 
     pub fn witnesscachesize(&self) -> i64 {

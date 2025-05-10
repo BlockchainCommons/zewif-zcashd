@@ -1,11 +1,10 @@
+use anyhow::{Context, Result, bail};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
-
-use anyhow::{Context, Result, bail};
+use zewif::Data;
 
 use super::BDBDump;
-use zewif::{parse, parser::prelude::*};
-use zewif::Data;
+use crate::{parse, parser::prelude::*};
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DBKey {
@@ -106,7 +105,10 @@ impl ZcashdDump {
             keyname_keys.insert(key);
         }
 
-        Ok(ZcashdDump { records, keys_by_keyname })
+        Ok(ZcashdDump {
+            records,
+            keys_by_keyname,
+        })
     }
 
     pub fn records(&self) -> &HashMap<DBKey, DBValue> {

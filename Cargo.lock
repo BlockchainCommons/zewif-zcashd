@@ -82,13 +82,14 @@ checksum = "89e25b6adfb930f02d1981565a6e5d9c547ac15a96606256d3b59040e5cd4ca3"
 
 [[package]]
 name = "bc-components"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcea63887691d4385b9f022758ef9bc83a3100bd75c9df7f193beafc9dab59ce"
+checksum = "30ad09f203e55dde31351a144ad497d36072dd0a571945f3a88992f2383f7f94"
 dependencies = [
  "anyhow",
  "bc-crypto",
  "bc-rand",
+ "bc-tags",
  "bc-ur",
  "dcbor",
  "hex",
@@ -106,9 +107,9 @@ dependencies = [
 
 [[package]]
 name = "bc-crypto"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e994ea66dd1d7476352c6128f5c171dabf958c4b8d9cd8845ccbd9834acc2661"
+checksum = "04934bfaaf6880d5fa71099ffc75435d45c7d066a9b42d6bccf2a4ca832947c1"
 dependencies = [
  "anyhow",
  "bc-rand",
@@ -120,7 +121,8 @@ dependencies = [
  "hmac",
  "pbkdf2",
  "rand",
- "secp256k1",
+ "scrypt",
+ "secp256k1 0.30.0",
  "sha2",
  "thiserror",
  "x25519-dalek",
@@ -128,9 +130,9 @@ dependencies = [
 
 [[package]]
 name = "bc-envelope"
-version = "0.26.0"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9c7ecf4f1fbdfcbdbf2bf37be135cf66b84e8fe25ab2958b0f42f897a9bdbc8"
+checksum = "0a096ad7cc6a08a75df744d1f731d39863dcc91e12f6cf5beb1c441fd44a90b9"
 dependencies = [
  "anyhow",
  "bc-components",
@@ -141,6 +143,7 @@ dependencies = [
  "dcbor",
  "hex",
  "itertools",
+ "known-values",
  "paste",
  "ssh-key",
  "thiserror",
@@ -148,9 +151,9 @@ dependencies = [
 
 [[package]]
 name = "bc-rand"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30be5015f1581570126da63fb6bf5fc642f04b214a13bc4d60a6b08ab6aaa751"
+checksum = "5bd5f55d05b06624b5b3c2aa7d7e1c6ab06a41e186b66fef68cfd2ad08149ba1"
 dependencies = [
  "getrandom 0.2.16",
  "lazy_static",
@@ -162,9 +165,9 @@ dependencies = [
 
 [[package]]
 name = "bc-shamir"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ae7fd5014462ae1a17e72a5a8d6421f25f221956797b02c805b2ae7d31adc04"
+checksum = "71ea35338f9769920bc6bac820182a4b61108fa85151f63fd90983ae252adbe1"
 dependencies = [
  "bc-crypto",
  "bc-rand",
@@ -172,16 +175,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "bc-ur"
-version = "0.7.0"
+name = "bc-tags"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19c7711e4d76af25e281a811f129e121f435ff6adb80e79d51a9238d450d6129"
+checksum = "22b913ee5f2b0abd3fc0b4098aa88519ff20d6c30c21894eb47c4cc977bfa0b5"
 dependencies = [
- "anyhow",
+ "dcbor",
+ "paste",
+]
+
+[[package]]
+name = "bc-ur"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd117e4e52cd634f935220f4936e8283a1a2341dc8511ff7e913586f33687540"
+dependencies = [
  "dcbor",
  "thiserror",
  "ur",
 ]
+
+[[package]]
+name = "bech32"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d86b93f97252c47b41663388e6d155714a9d0c398b99f1005cbc5f978b29f445"
 
 [[package]]
 name = "bech32"
@@ -208,6 +226,22 @@ dependencies = [
  "rand_core",
  "rayon",
  "subtle",
+]
+
+[[package]]
+name = "bip32"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db40d3dfbeab4e031d78c844642fa0caa0b0db11ce1607ac9d2986dff1405c69"
+dependencies = [
+ "bs58",
+ "hmac",
+ "rand_core",
+ "ripemd",
+ "secp256k1 0.27.0",
+ "sha2",
+ "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -301,6 +335,15 @@ dependencies = [
  "pairing",
  "rand_core",
  "subtle",
+]
+
+[[package]]
+name = "bridgetree"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cef977c7f8e75aa81fc589064c121ab8d32448b7939d34d58df479aa93e65ea5"
+dependencies = [
+ "incrementalmerkletree",
 ]
 
 [[package]]
@@ -558,14 +601,15 @@ dependencies = [
 
 [[package]]
 name = "dcbor"
-version = "0.17.1"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b52f4c8f7dbd03ae7e55333249f9d3bcb4a14efa63efe73c33040269e5fd0121"
+checksum = "acd7515d6680292a81c11bd3371c7e553c0780371d932d6e6797e7e99ee38aff"
 dependencies = [
  "anyhow",
  "chrono",
  "half",
  "hex",
+ "paste",
  "thiserror",
  "unicode-normalization",
 ]
@@ -1153,6 +1197,17 @@ dependencies = [
  "group",
  "rand_core",
  "subtle",
+]
+
+[[package]]
+name = "known-values"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de45f9a353aea10da248d5e1b7270795f394eb95fb5f60d0daae71ae2ff426f8"
+dependencies = [
+ "bc-components",
+ "dcbor",
+ "paste",
 ]
 
 [[package]]
@@ -1799,6 +1854,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eded382c5f5f786b989652c49544c4877d9f015cc22e145a5ea8ea66c2921cd2"
 
 [[package]]
+name = "salsa20"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97a22f5af31f73a954c10289c93e8a50cc23d971e80ee446f1f6f7137a088213"
+dependencies = [
+ "cipher",
+]
+
+[[package]]
 name = "sapling-crypto"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1831,6 +1895,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "scrypt"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0516a385866c09368f0b5bcd1caff3366aace790fcd46e2bb032697bb172fd1f"
+dependencies = [
+ "pbkdf2",
+ "salsa20",
+ "sha2",
+]
+
+[[package]]
 name = "sec1"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1846,13 +1921,31 @@ dependencies = [
 
 [[package]]
 name = "secp256k1"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25996b82292a7a57ed3508f052cfff8640d38d32018784acd714758b43da9c8f"
+dependencies = [
+ "secp256k1-sys 0.8.1",
+]
+
+[[package]]
+name = "secp256k1"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b50c5943d326858130af85e049f2661ba3c78b26589b8ab98e65e80ae44a1252"
 dependencies = [
  "bitcoin_hashes 0.14.0",
  "rand",
- "secp256k1-sys",
+ "secp256k1-sys 0.10.1",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70a129b9e9efbfb223753b9163c4ab3b13cff7fd9c7f010fbac25ab4099fa07e"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -1862,6 +1955,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4387882333d3aa8cb20530a17c69a3752e97837832f34f6dccc760e715001d9"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "secrecy"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd1c54ea06cfd2f6b63219704de0b9b4f72dcc2b8fdef820be6cd799780e91e"
+dependencies = [
+ "zeroize",
 ]
 
 [[package]]
@@ -2014,9 +2116,9 @@ dependencies = [
 
 [[package]]
 name = "sskr"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5c48d07ebb6b16423bdbf710d1511dd3c22927d1bbea5ff22cd27a1fcf2dabe"
+checksum = "f412d410cd9e7b6eb62fcf7bc491970dfd25ea6dc06d1d6f087e927364a2dd86"
 dependencies = [
  "bc-rand",
  "bc-shamir",
@@ -2234,6 +2336,12 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+
+[[package]]
+name = "uuid"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "458f7a779bf54acc9f347480ac654f68407d3aab21269a6e3c9f922acd9e2da9"
 
 [[package]]
 name = "version_check"
@@ -2456,12 +2564,12 @@ version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b955fe87f2d9052e3729bdbeb0e94975355f4fe39f7d26aea9457bec6a0bb55"
 dependencies = [
- "bech32",
+ "bech32 0.11.0",
  "bs58",
  "core2",
  "f4jumble",
  "zcash_encoding",
- "zcash_protocol 0.4.3",
+ "zcash_protocol",
 ]
 
 [[package]]
@@ -2472,6 +2580,34 @@ checksum = "3654116ae23ab67dd1f849b01f8821a8a156f884807ff665eac109bf28306c4d"
 dependencies = [
  "core2",
  "nonempty",
+]
+
+[[package]]
+name = "zcash_keys"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8162c94957f1e379b8e2fb30f97b95cfa93ac9c6bc02895946ca6392d1abb81"
+dependencies = [
+ "bech32 0.9.1",
+ "bip32",
+ "blake2b_simd",
+ "bls12_381",
+ "bs58",
+ "document-features",
+ "group",
+ "memuse",
+ "nonempty",
+ "orchard",
+ "rand_core",
+ "sapling-crypto",
+ "secrecy",
+ "subtle",
+ "tracing",
+ "zcash_address",
+ "zcash_encoding",
+ "zcash_primitives",
+ "zcash_protocol",
+ "zip32",
 ]
 
 [[package]]
@@ -2494,6 +2630,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ab47d526d7fd6f88b3a2854ad81b54757a80c2aeadd1d8b06f690556af9743c"
 dependencies = [
  "aes",
+ "bip32",
  "blake2b_simd",
  "bs58",
  "byteorder",
@@ -2511,14 +2648,16 @@ dependencies = [
  "rand",
  "rand_core",
  "redjubjub",
+ "ripemd",
  "sapling-crypto",
+ "secp256k1 0.27.0",
  "sha2",
  "subtle",
  "tracing",
  "zcash_address",
  "zcash_encoding",
  "zcash_note_encryption",
- "zcash_protocol 0.4.3",
+ "zcash_protocol",
  "zcash_spec",
  "zip32",
 ]
@@ -2528,18 +2667,6 @@ name = "zcash_protocol"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "82cb36b15b5a1be70b30c32ce40372dead6561df8a467e297f96b892873a63a2"
-dependencies = [
- "core2",
- "document-features",
- "hex",
- "memuse",
-]
-
-[[package]]
-name = "zcash_protocol"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de0acf60e235c5ba42c83f1e7e3763cf90a436583e6de71557fed26bab2d65dc"
 dependencies = [
  "core2",
  "document-features",
@@ -2642,16 +2769,15 @@ dependencies = [
 [[package]]
 name = "zewif"
 version = "0.1.0"
-source = "git+https://github.com/BlockchainCommons/zewif.git?rev=a520346763191b41d66088a7d64a0e27574364fb#a520346763191b41d66088a7d64a0e27574364fb"
+source = "git+https://github.com/BlockchainCommons/zewif.git?rev=18592063cce454158e8110d0bd11be869fb67f60#18592063cce454158e8110d0bd11be869fb67f60"
 dependencies = [
  "anyhow",
  "bc-components",
  "bc-crypto",
  "bc-envelope",
  "chrono",
+ "dcbor",
  "hex",
- "sha2",
- "zcash_protocol 0.5.1",
 ]
 
 [[package]]
@@ -2659,15 +2785,25 @@ name = "zewif-zcashd"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bc-rand",
+ "bitflags",
+ "bridgetree",
  "byteorder",
  "chrono",
  "hex",
+ "incrementalmerkletree",
  "orchard",
  "ripemd",
+ "sapling-crypto",
  "sha2",
+ "uuid",
  "zcash_address",
+ "zcash_encoding",
+ "zcash_keys",
  "zcash_primitives",
+ "zcash_protocol",
  "zewif",
+ "zip32",
 ]
 
 [[package]]

@@ -1,29 +1,10 @@
 use zewif::mod_use;
 
-mod_use!(address);
 mod_use!(bdb_dump);
-mod_use!(block_locator);
-mod_use!(client_version);
-mod_use!(key_id);
-mod_use!(key_metadata);
-mod_use!(key_pool);
-mod_use!(key);
-mod_use!(keys);
-mod_use!(mnemonic_hd_chain);
-mod_use!(network_info);
-mod_use!(priv_key);
-mod_use!(pub_key);
-mod_use!(recipient_address);
-mod_use!(recipient_mapping);
-mod_use!(script_id);
-mod_use!(sprout_keys);
-mod_use!(sprout_spending_key);
-mod_use!(tx);
-mod_use!(unified_account_metadata);
-mod_use!(unified_accounts);
-mod_use!(unified_address_metadata);
 mod_use!(zcashd_dump);
 mod_use!(zcashd_parser);
-mod_use!(zcashd_wallet);
 
-pub(crate) mod migrate;
+pub mod migrate;
+pub mod parser;
+pub mod zcashd_wallet;
+pub use zcashd_wallet::ZcashdWallet;
