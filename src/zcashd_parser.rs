@@ -1,10 +1,13 @@
 use anyhow::{Context, Result, bail};
+use hex::ToHex as _;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
 };
 use zcash_keys::keys::UnifiedFullViewingKey;
-use zewif::{Bip39Mnemonic, SeedFingerprint, TxId, sapling::SaplingIncomingViewingKey};
+use zewif::{
+    Bip39Mnemonic, Data, LegacySeed, SeedFingerprint, TxId, sapling::SaplingIncomingViewingKey,
+};
 
 use crate::{
     DBValue, ZcashdDump, ZcashdWallet, parse,
@@ -17,7 +20,7 @@ use crate::{
         orchard::OrchardNoteCommitmentTree,
         sapling::{SaplingKey, SaplingKeys, SaplingZPaymentAddress},
         sprout::{SproutKeys, SproutPaymentAddress, SproutSpendingKey},
-        transparent::{Key, KeyPoolEntry, Keys, PrivKey, PubKey, WalletKey, WalletKeys},
+        transparent::{KeyPair, KeyPoolEntry, Keys, PrivKey, PubKey, WalletKey, WalletKeys},
         u252,
     },
 };
@@ -26,19 +29,21 @@ use crate::{
 pub struct ZcashdParser<'a> {
     pub dump: &'a ZcashdDump,
     pub unparsed_keys: RefCell<HashSet<DBKey>>,
+    pub strict: bool,
 }
 
 impl<'a> ZcashdParser<'a> {
-    pub fn parse_dump(dump: &ZcashdDump) -> Result<(ZcashdWallet, HashSet<DBKey>)> {
-        let parser = ZcashdParser::new(dump);
+    pub fn parse_dump(dump: &ZcashdDump, strict: bool) -> Result<(ZcashdWallet, HashSet<DBKey>)> {
+        let parser = ZcashdParser::new(dump, strict);
         parser.parse()
     }
 
-    fn new(dump: &'a ZcashdDump) -> Self {
+    fn new(dump: &'a ZcashdDump, strict: bool) -> Self {
         let unparsed_keys = RefCell::new(dump.records().keys().cloned().collect());
         Self {
             dump,
             unparsed_keys,
+            strict,
         }
     }
 
@@ -81,7 +86,8 @@ impl<'a> ZcashdParser<'a> {
 
         // **hdchain**
 
-        // ~~hdseed~~: Removed in 5.0.0
+        // hdseed
+        let legacy_hd_seed = self.parse_hdseed()?;
 
         // key
         // keymeta
@@ -113,7 +119,7 @@ impl<'a> ZcashdParser<'a> {
         let sapling_keys = self.parse_sapling_keys()?;
 
         // tx
-        let transactions = self.parse_transactions()?;
+        let transactions = self.parse_transactions(self.strict)?;
 
         // **version**
         let client_version = self.parse_client_version("version")?;
@@ -177,6 +183,7 @@ impl<'a> ZcashdParser<'a> {
             key_pool,
             keys,
             min_version,
+            legacy_hd_seed,
             mnemonic_hd_chain,
             mnemonic_phrase,
             network_info,
@@ -256,8 +263,8 @@ impl<'a> ZcashdParser<'a> {
                 .value_for_key(&metakey)
                 .context("Getting metadata")?;
             let metadata = parse!(buf = metadata_binary, KeyMetadata, "metadata")?;
-            let keypair =
-                Key::new(pubkey.clone(), privkey.clone(), metadata).context("Creating keypair")?;
+            let keypair = KeyPair::new(pubkey.clone(), privkey.clone(), metadata)
+                .context("Creating keypair")?;
             keys_map.insert(pubkey, keypair);
 
             self.mark_key_parsed(&key);
@@ -290,7 +297,7 @@ impl<'a> ZcashdParser<'a> {
                 privkey.clone(),
                 time_created,
                 time_expires,
-                comment
+                comment,
             );
             keys_map.insert(pubkey, wallet_key);
 
@@ -328,8 +335,8 @@ impl<'a> ZcashdParser<'a> {
                 .value_for_key(&metakey)
                 .context("Getting sapzkeymeta metadata")?;
             let metadata = parse!(buf = metadata_binary, KeyMetadata, "sapzkeymeta metadata")?;
-            let keypair = SaplingKey::new(ivk, spending_key.clone(), metadata)
-                .context("Creating keypair")?;
+            let keypair =
+                SaplingKey::new(ivk, spending_key.clone(), metadata).context("Creating keypair")?;
             keys_map.insert(ivk, keypair);
 
             self.mark_key_parsed(&key);
@@ -468,6 +475,21 @@ impl<'a> ZcashdParser<'a> {
         ))
     }
 
+    fn parse_hdseed(&self) -> Result<Option<LegacySeed>> {
+        Ok(if self.dump.has_value_for_keyname("hdseed") {
+            let (key, value) = self
+                .dump
+                .record_for_keyname("hdseed")
+                .context("Getting 'hdseed' record")?;
+            let fingerprint = parse!(buf = &key.data, SeedFingerprint, "seed fingerprint")?;
+            let seed_data = parse!(buf = &value, Data, "legacy seed data")?;
+            self.mark_key_parsed(&key);
+            Some(LegacySeed::new(seed_data, Some(fingerprint)))
+        } else {
+            None
+        })
+    }
+
     fn parse_mnemonic_phrase(&self) -> Result<Bip39Mnemonic> {
         let (key, value) = self
             .dump
@@ -560,7 +582,7 @@ impl<'a> ZcashdParser<'a> {
             .value_for_keyname("orchard_note_commitment_tree")
             .context("Getting 'orchard_note_commitment_tree' record")?;
         let orchard_note_commitment_tree = parse!(
-            buf = value.as_data(),
+            buf = &&value.as_data()[4..],
             OrchardNoteCommitmentTree,
             "orchard note commitment tree"
         )?;
@@ -583,7 +605,7 @@ impl<'a> ZcashdParser<'a> {
         Ok(key_pool)
     }
 
-    fn parse_transactions(&self) -> Result<HashMap<TxId, WalletTx>> {
+    fn parse_transactions(&self, strict: bool) -> Result<HashMap<TxId, WalletTx>> {
         let mut transactions = HashMap::new();
         // Some wallet files don't have any transactions
         if self.dump.has_keys_for_keyname("tx") {
@@ -596,11 +618,24 @@ impl<'a> ZcashdParser<'a> {
             for (key, value) in sorted_records {
                 let txid = parse!(buf = &key.data, TxId, "transaction ID")?;
                 let trace = false;
-                let transaction = parse!(buf = value.as_data(), WalletTx, "transaction", trace)?;
-                if transactions.contains_key(&txid) {
-                    bail!("Duplicate transaction found: {:?}", txid);
+                match parse!(buf = value.as_data(), WalletTx, "transaction", trace) {
+                    Ok(transaction) => {
+                        if transactions.contains_key(&txid) {
+                            bail!("Duplicate transaction found: {:?}", txid);
+                        }
+                        transactions.insert(txid, transaction);
+                    }
+                    Err(e) if !strict => {
+                        eprintln!(
+                            "Unable to parse transaction data {}: {}",
+                            value.as_data().encode_hex::<String>(),
+                            e
+                        );
+                    }
+                    err => {
+                        err?;
+                    }
                 }
-                transactions.insert(txid, transaction);
 
                 self.mark_key_parsed(&key);
             }

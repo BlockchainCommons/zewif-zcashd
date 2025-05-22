@@ -1,10 +1,11 @@
 use anyhow::{Context, Result, bail};
+use hex::ToHex;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
-use zewif::Data;
 
 use super::BDBDump;
 use crate::{parse, parser::prelude::*};
+use zewif::Data;
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DBKey {
@@ -91,18 +92,31 @@ pub struct ZcashdDump {
 }
 
 impl ZcashdDump {
-    pub fn from_bdb_dump(berkeley_dump: &BDBDump) -> Result<Self> {
+    pub fn from_bdb_dump(berkeley_dump: &BDBDump, strict: bool) -> Result<Self> {
         let mut records: HashMap<DBKey, DBValue> = HashMap::new();
         let mut keys_by_keyname: HashMap<String, HashSet<DBKey>> = HashMap::new();
 
         for (key_data, value_data) in &berkeley_dump.data_records {
-            let key = DBKey::parse_data(key_data)?;
-            let value = DBValue::new(value_data.clone());
-            records.insert(key.clone(), value.clone());
+            match DBKey::parse_data(key_data) {
+                Ok(key) => {
+                    let value = DBValue::new(value_data.clone());
+                    records.insert(key.clone(), value.clone());
 
-            let keyname = key.keyname.to_string();
-            let keyname_keys = keys_by_keyname.entry(keyname).or_default();
-            keyname_keys.insert(key);
+                    let keyname = key.keyname.to_string();
+                    let keyname_keys = keys_by_keyname.entry(keyname).or_default();
+                    keyname_keys.insert(key);
+                }
+                Err(e) if !strict => {
+                    eprintln!(
+                        "Unable to parse database key {}: {}",
+                        key_data.encode_hex::<String>(),
+                        e
+                    );
+                }
+                err => {
+                    err?;
+                }
+            }
         }
 
         Ok(ZcashdDump {

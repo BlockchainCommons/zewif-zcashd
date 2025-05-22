@@ -65,8 +65,8 @@ impl Parse for KeyMetadata {
         Ok(Self {
             version,
             create_time,
-            hd_keypath,
-            seed_fp,
+            hd_keypath: hd_keypath.filter(|p| !p.trim().is_empty()),
+            seed_fp: seed_fp.filter(|fp| fp.as_bytes() != &[0u8; 32]),
         })
     }
 }

@@ -19,6 +19,10 @@ impl PrivKey {
         &self.data
     }
 
+    pub fn as_slice(&self) -> &[u8] {
+        self.data.as_slice()
+    }
+
     pub fn hash(&self) -> u256 {
         self.hash
     }

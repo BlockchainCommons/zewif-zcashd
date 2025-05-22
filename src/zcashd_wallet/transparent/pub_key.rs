@@ -7,6 +7,19 @@ use crate::{parse, parser::prelude::*, zcashd_wallet::CompactSize};
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PubKey(Data);
 
+impl PubKey {
+    pub const PUBLIC_KEY_SIZE: usize = 65;
+    pub const COMPRESSED_PUBLIC_KEY_SIZE: usize = 33;
+
+    pub fn as_slice(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+
+    pub fn is_compressed(&self) -> bool {
+        self.0.as_slice().len() == Self::COMPRESSED_PUBLIC_KEY_SIZE
+    }
+}
+
 impl std::fmt::Debug for PubKey {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "PubKey({:?})", &self.0)

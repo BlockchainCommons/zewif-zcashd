@@ -88,7 +88,7 @@ pub fn convert_unified_accounts(
             if let Some(sapling_key) = find_sapling_key_for_ivk(wallet, viewing_key) {
                 // Convert to Zewif spending key format
                 shielded_address.set_spending_key(SaplingExtendedSpendingKey::new(
-                    sapling_key.key().to_bytes(),
+                    sapling_key.extsk().to_bytes(),
                 ));
             }
 

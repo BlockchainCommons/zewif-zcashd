@@ -1,7 +1,7 @@
 use zewif::mod_use;
 
 mod_use!(key_id);
-mod_use!(key);
+mod_use!(key_pair);
 mod_use!(keys);
 mod_use!(priv_key);
 mod_use!(pub_key);

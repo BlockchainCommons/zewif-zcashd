@@ -8,13 +8,13 @@ use crate::zcashd_wallet::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Key {
+pub struct KeyPair {
     pubkey: PubKey,
     privkey: PrivKey,
     metadata: KeyMetadata,
 }
 
-impl Key {
+impl KeyPair {
     pub fn pubkey(&self) -> &PubKey {
         &self.pubkey
     }
@@ -28,7 +28,7 @@ impl Key {
     }
 }
 
-impl Key {
+impl KeyPair {
     pub fn new(pubkey: PubKey, privkey: PrivKey, metadata: KeyMetadata) -> Result<Self> {
         let hash = hash256(Data::concat(&[&pubkey, &privkey]));
         if hash != privkey.hash() {

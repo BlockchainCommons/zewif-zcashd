@@ -1,4 +1,4 @@
-use zewif::mod_use;
+use zewif::{LegacySeed, mod_use};
 
 mod_use!(address);
 mod_use!(block_locator);
@@ -46,6 +46,7 @@ pub struct ZcashdWallet {
     key_pool: HashMap<i64, KeyPoolEntry>,
     keys: Keys,
     min_version: ClientVersion,
+    legacy_hd_seed: Option<LegacySeed>,
     mnemonic_hd_chain: MnemonicHDChain,
     bip39_mnemonic: Bip39Mnemonic,
     network_info: NetworkInfo,
@@ -73,6 +74,7 @@ impl ZcashdWallet {
         key_pool: HashMap<i64, KeyPoolEntry>,
         keys: Keys,
         min_version: ClientVersion,
+        legacy_hd_seed: Option<LegacySeed>,
         mnemonic_hd_chain: MnemonicHDChain,
         bip39_mnemonic: Bip39Mnemonic,
         network_info: NetworkInfo,
@@ -97,6 +99,7 @@ impl ZcashdWallet {
             key_pool,
             keys,
             min_version,
+            legacy_hd_seed,
             mnemonic_hd_chain,
             bip39_mnemonic,
             network_info,
@@ -146,6 +149,10 @@ impl ZcashdWallet {
 
     pub fn min_version(&self) -> &ClientVersion {
         &self.min_version
+    }
+
+    pub fn legacy_hd_seed(&self) -> Option<&LegacySeed> {
+        self.legacy_hd_seed.as_ref()
     }
 
     pub fn mnemonic_hd_chain(&self) -> &MnemonicHDChain {

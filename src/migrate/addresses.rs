@@ -94,7 +94,7 @@ pub fn convert_sapling_addresses(
         // Add spending key if available in sapling_keys
         if let Some(sapling_key) = find_sapling_key_for_ivk(wallet, viewing_key) {
             shielded_address.set_spending_key(SaplingExtendedSpendingKey::new(
-                sapling_key.key().to_bytes(),
+                sapling_key.extsk().to_bytes(),
             ));
         }
 

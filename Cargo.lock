@@ -51,6 +51,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
+name = "argon2"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c3610892ee6e0cbce8ae2700349fcf8f98adb0dbfbee85aec3c9179d29cc072"
+dependencies = [
+ "base64ct",
+ "blake2",
+ "cpufeatures",
+ "password-hash",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -82,9 +94,9 @@ checksum = "89e25b6adfb930f02d1981565a6e5d9c547ac15a96606256d3b59040e5cd4ca3"
 
 [[package]]
 name = "bc-components"
-version = "0.20.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30ad09f203e55dde31351a144ad497d36072dd0a571945f3a88992f2383f7f94"
+checksum = "350378302837b7b02d5f09eccfcaba9e33da63a4502ada497b7e48ad4c0ade73"
 dependencies = [
  "anyhow",
  "bc-crypto",
@@ -107,11 +119,12 @@ dependencies = [
 
 [[package]]
 name = "bc-crypto"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04934bfaaf6880d5fa71099ffc75435d45c7d066a9b42d6bccf2a4ca832947c1"
+checksum = "8647a24a5edf0ed9ea01f5258e7d092465c6f9b0508b32166c4dccbe1c291c9c"
 dependencies = [
  "anyhow",
+ "argon2",
  "bc-rand",
  "chacha20poly1305",
  "crc32fast",
@@ -130,9 +143,9 @@ dependencies = [
 
 [[package]]
 name = "bc-envelope"
-version = "0.27.1"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a096ad7cc6a08a75df744d1f731d39863dcc91e12f6cf5beb1c441fd44a90b9"
+checksum = "38290e31247fd6a47d34568c7b05cb9bde4976405c1aa0b8f73f6349c130176f"
 dependencies = [
  "anyhow",
  "bc-components",
@@ -165,9 +178,9 @@ dependencies = [
 
 [[package]]
 name = "bc-shamir"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71ea35338f9769920bc6bac820182a4b61108fa85151f63fd90983ae252adbe1"
+checksum = "3b6bdb46e87c24147d929cd78a93316ac118284825babeec47becd00395ee9eb"
 dependencies = [
  "bc-crypto",
  "bc-rand",
@@ -176,9 +189,9 @@ dependencies = [
 
 [[package]]
 name = "bc-tags"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22b913ee5f2b0abd3fc0b4098aa88519ff20d6c30c21894eb47c4cc977bfa0b5"
+checksum = "fbfd44331570ae0d61d92f7d62408b215f6833da9c8d464eb09706a079363ce4"
 dependencies = [
  "dcbor",
  "paste",
@@ -186,9 +199,9 @@ dependencies = [
 
 [[package]]
 name = "bc-ur"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd117e4e52cd634f935220f4936e8283a1a2341dc8511ff7e913586f33687540"
+checksum = "c65e33cfacc82d2e6ef819ac08e73a429de526a4b019135fddbd2e14477ec2b2"
 dependencies = [
  "dcbor",
  "thiserror",
@@ -291,6 +304,15 @@ dependencies = [
  "radium",
  "tap",
  "wyz",
+]
+
+[[package]]
+name = "blake2"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46502ad458c9a52b69d4d4d32775c788b7a1b85e8bc9d482d92250fc0e3f8efe"
+dependencies = [
+ "digest",
 ]
 
 [[package]]
@@ -601,9 +623,9 @@ dependencies = [
 
 [[package]]
 name = "dcbor"
-version = "0.18.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acd7515d6680292a81c11bd3371c7e553c0780371d932d6e6797e7e99ee38aff"
+checksum = "402f083d3c2daef249d4c06ef827c8b743ab88536f73dae52201f4de5abb0354"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1201,9 +1223,9 @@ dependencies = [
 
 [[package]]
 name = "known-values"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de45f9a353aea10da248d5e1b7270795f394eb95fb5f60d0daae71ae2ff426f8"
+checksum = "b7c3c5085ed0cb90e914af0906adca5fd87dd4af28ab6dc254edca97eee23a73"
 dependencies = [
  "bc-components",
  "dcbor",
@@ -1465,6 +1487,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81fec4625e73cf41ef4bb6846cafa6d44736525f442ba45e407c4a000a13996f"
 dependencies = [
  "group",
+]
+
+[[package]]
+name = "password-hash"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
+dependencies = [
+ "base64ct",
+ "rand_core",
+ "subtle",
 ]
 
 [[package]]
@@ -2116,9 +2149,9 @@ dependencies = [
 
 [[package]]
 name = "sskr"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f412d410cd9e7b6eb62fcf7bc491970dfd25ea6dc06d1d6f087e927364a2dd86"
+checksum = "5ac11f99ef5cbbbc90a1eeeb4425d53af1e3ef9ff279102c009f643be2058e25"
 dependencies = [
  "bc-rand",
  "bc-shamir",
@@ -2769,7 +2802,7 @@ dependencies = [
 [[package]]
 name = "zewif"
 version = "0.1.0"
-source = "git+https://github.com/BlockchainCommons/zewif.git?rev=18592063cce454158e8110d0bd11be869fb67f60#18592063cce454158e8110d0bd11be869fb67f60"
+source = "git+https://github.com/nuttycom/zewif.git?rev=8f005a6f5a189815dc08821f99cfe7e8af4e7f62#8f005a6f5a189815dc08821f99cfe7e8af4e7f62"
 dependencies = [
  "anyhow",
  "bc-components",
