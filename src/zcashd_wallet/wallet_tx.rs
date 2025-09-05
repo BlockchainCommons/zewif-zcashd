@@ -144,13 +144,14 @@ impl Parse for WalletTx {
 
         let mut sapling_note_data = None;
         if transaction.version().has_sapling() {
-            sapling_note_data = parse!(p, "sapling_note_data")?;
+            let value = parse!(p, "sapling_note_data")?;
+            sapling_note_data = Some(value);
         }
 
         let mut orchard_tx_meta: Option<OrchardTxMeta> = None;
         if transaction.version().has_orchard() {
-            let meta = parse!(p, "orchard_tx_meta")?;
-            orchard_tx_meta = Some(meta);
+            let value = parse!(p, "orchard_tx_meta")?;
+            orchard_tx_meta = Some(value);
         }
 
         let unparsed_data = p.rest();
