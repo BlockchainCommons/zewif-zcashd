@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use ::orchard::keys::IncomingViewingKey;
 use std::collections::HashMap;
 

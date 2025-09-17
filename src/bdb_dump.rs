@@ -4,8 +4,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use anyhow::{Result, anyhow, bail};
-
+use crate::{error::DumpInconsistency, Error, Result};
 use zewif::Data;
 
 pub struct BDBDump {
@@ -21,15 +20,24 @@ impl BDBDump {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| anyhow!("Error executing db_dump against path {}: {}", filepath.to_string_lossy(), e))?;
+            .map_err(|e| {
+                Error::with_context(
+                    e,
+                    format!(
+                        "Error executing db_dump against path {}",
+                        filepath.to_string_lossy()
+                    ),
+                )
+            })?;
 
         // Check if db_dump executed successfully
         if !output.status.success() {
-            bail!(
-                "db_dump failed with status: {}\nError: {}",
-                output.status,
-                String::from_utf8_lossy(&output.stderr)
-            );
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(Error::CommandFailure {
+                command: "db_dump",
+                status: output.status.code(),
+                message: format!("{}; stderr: {}", output.status, stderr),
+            });
         }
 
         // Convert the stdout to a string for parsing
@@ -92,11 +100,15 @@ impl BDBDump {
 
         // Check if there was an unmatched key without a corresponding value
         if current_key.is_some() {
-            bail!("Warning: Found a key without a corresponding value.");
+            return Err(Error::DumpInconsistency {
+                reason: DumpInconsistency::UnmatchedKeyValue,
+            });
         }
 
         if records_count != data_records.len() {
-            bail!("Warning: Non-uniqueness in keys detected.");
+            return Err(Error::DumpInconsistency {
+                reason: DumpInconsistency::NonUniqueKeys,
+            });
         }
 
         Ok(BDBDump { header_records, data_records })

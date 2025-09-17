@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use crate::{Result, ResultExt};
 use zewif::SeedFingerprint;
 
 use crate::{parse, parser::prelude::*};

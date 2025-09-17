@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use crate::{Error, OptionExt, Result, ResultExt};
 use hex::ToHex;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
@@ -132,7 +132,10 @@ impl ZcashdDump {
     pub fn value_for_key(&self, key: &DBKey) -> Result<&DBValue> {
         match self.records.get(key) {
             Some(value) => Ok(value),
-            None => bail!("No record found for key: {}", key),
+            None => Err(Error::MissingRecord {
+                kind: "key",
+                key: key.to_string(),
+            }),
         }
     }
 
@@ -142,7 +145,8 @@ impl ZcashdDump {
 
     pub fn value_for_keyname(&self, keyname: &str) -> Result<&DBValue> {
         let key = self.key_for_keyname(keyname);
-        self.value_for_key(&key)
+        self
+            .value_for_key(&key)
             .context(format!("No record found for keyname: {}", keyname))
     }
 
@@ -160,7 +164,10 @@ impl ZcashdDump {
         let keys = self
             .keys_by_keyname
             .get(keyname)
-            .context(format!("No records found for keyname: {}", keyname))?;
+            .context(|| Error::MissingRecord {
+                kind: "keyname",
+                key: keyname.to_string(),
+            })?;
         let mut records = HashMap::new();
         for key in keys {
             let value = self.value_for_key(key)?;
@@ -177,16 +184,26 @@ impl ZcashdDump {
         let keys = self
             .keys_by_keyname
             .get(keyname)
-            .context(format!("No records found for keyname: {}", keyname))?;
+            .context(|| Error::MissingRecord {
+                kind: "keyname",
+                key: keyname.to_string(),
+            })?;
         if keys.len() != 1 {
-            bail!("Expected exactly one record for keyname: {}", keyname);
+            return Err(Error::UnexpectedRecordCount {
+                kind: "keyname",
+                identifier: keyname.to_string(),
+                count: keys.len(),
+            });
         }
         match keys.iter().next() {
             Some(key) => {
                 let value = self.value_for_key(key)?;
                 Ok((key.clone(), value.clone()))
             }
-            None => bail!("No record found for keyname: {}", keyname),
+            None => Err(Error::MissingRecord {
+                kind: "keyname",
+                key: keyname.to_string(),
+            }),
         }
     }
 

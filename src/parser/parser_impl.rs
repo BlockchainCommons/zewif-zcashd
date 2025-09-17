@@ -5,8 +5,7 @@
 //! raw bytes. It includes both the low-level `Parser` for byte manipulation and the
 //! higher-level `Parse` and `ParseWithParam` traits for structured type parsing.
 
-use anyhow::{Result, bail};
-
+use crate::{Error, Result};
 use zewif::Data;
 
 /// A trait for types that can be parsed from a binary data stream.
@@ -23,8 +22,7 @@ use zewif::Data;
 ///
 /// # Examples
 /// ```no_run
-/// # use anyhow::Result;
-/// # use zewif_zcashd::parser::{Parse, Parser};
+/// # use zewif_zcashd::{parser::{Parse, Parser}, Result};
 /// #
 /// // Implementing Parse for a custom type
 /// struct MyType {
@@ -89,8 +87,7 @@ pub trait Parse {
 ///
 /// # Examples
 /// ```no_run
-/// # use zewif_zcashd::parser::prelude::*;
-/// # use anyhow::Result;
+/// # use zewif_zcashd::{parser::prelude::*, Result};
 /// #
 /// // A type that needs a parameter during parsing
 /// enum ProofType {
@@ -162,8 +159,7 @@ pub trait ParseWithParam<P> {
 ///
 /// # Examples
 /// ```no_run
-/// # use zewif_zcashd::parser::prelude::*;
-/// # use anyhow::Result;
+/// # use zewif_zcashd::{parser::prelude::*, Result};
 /// #
 /// # fn example() -> Result<()> {
 /// // Create a parser from raw bytes
@@ -228,19 +224,20 @@ impl<'a> Parser<'a> {
 
     pub fn check_finished(&self) -> Result<()> {
         if self.offset < self.buffer.len() {
-            bail!("Buffer has {} bytes left", self.remaining());
+            return Err(Error::BufferNotConsumed {
+                remaining: self.remaining(),
+            });
         }
         Ok(())
     }
 
     pub fn next(&mut self, n: usize) -> Result<&'a [u8]> {
         if self.offset + n > self.buffer.len() {
-            bail!(
-                "Buffer underflow at offset {}, needed {} bytes, only {} remaining",
-                self.offset,
-                n,
-                self.remaining()
-            );
+            return Err(Error::BufferUnderflow {
+                offset: self.offset,
+                needed: n,
+                remaining: self.remaining(),
+            });
         }
         let bytes = &self.buffer[self.offset..self.offset + n];
         self.offset += n;
@@ -262,7 +259,8 @@ impl<'a> Parser<'a> {
     }
 
     pub fn rest(&mut self) -> Data {
-        let bytes = self.next(self.remaining()).unwrap();
+        let bytes = &self.buffer[self.offset..];
+        self.offset = self.buffer.len();
         Data::from_slice(bytes)
     }
 

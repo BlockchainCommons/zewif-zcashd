@@ -6,7 +6,7 @@ license = "MIT or Apache 2.0"
 
 [dependencies]
 zewif = "0.1.0"
-anyhow = "1.0.95"
+thiserror = "2"
 bitflags = "2"
 chrono = "0.4.39"
 hex = "0.4.3"

@@ -1,7 +1,5 @@
-use anyhow::{Error, Result, bail};
+use crate::{error::ExpectedLengths, parse, parser::prelude::*, Error, Result};
 use zewif::Blob32;
-
-use crate::{parse, parser::prelude::*};
 
 pub const U256_SIZE: usize = 32;
 
@@ -66,9 +64,13 @@ impl u256 {
 impl TryFrom<&[u8]> for u256 {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &[u8]) -> std::result::Result<Self, Self::Error> {
         if bytes.len() != U256_SIZE {
-            bail!("Invalid data length: expected 32, got {}", bytes.len());
+            return Err(Error::InvalidLength {
+                kind: "u256",
+                expected: ExpectedLengths::Single(U256_SIZE),
+                actual: bytes.len(),
+            });
         }
         let mut a = [0u8; U256_SIZE];
         a.copy_from_slice(bytes);
@@ -79,7 +81,7 @@ impl TryFrom<&[u8]> for u256 {
 impl TryFrom<&[u8; U256_SIZE]> for u256 {
     type Error = Error;
 
-    fn try_from(bytes: &[u8; U256_SIZE]) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &[u8; U256_SIZE]) -> std::result::Result<Self, Self::Error> {
         Ok(Self(*bytes))
     }
 }
@@ -87,7 +89,7 @@ impl TryFrom<&[u8; U256_SIZE]> for u256 {
 impl TryFrom<&Vec<u8>> for u256 {
     type Error = Error;
 
-    fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &Vec<u8>) -> std::result::Result<Self, Self::Error> {
         Self::try_from(bytes.as_slice())
     }
 }

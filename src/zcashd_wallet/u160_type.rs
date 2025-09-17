@@ -1,7 +1,5 @@
-use anyhow::{Context, Error, Result, bail};
+use crate::{error::ExpectedLengths, parse, parser::prelude::*, Error, Result, ResultExt};
 use zewif::Blob20;
-
-use crate::{parse, parser::prelude::*};
 
 pub const U160_SIZE: usize = 20;
 
@@ -25,7 +23,7 @@ pub const U160_SIZE: usize = 20;
 ///
 /// # Examples
 /// ```
-/// # use anyhow::Result;
+/// # use zewif_zcashd::Result;
 /// # use zewif_zcashd::zcashd_wallet::u160;
 /// # fn example() -> Result<()> {
 /// // Create a u160 from a byte slice (e.g., for a P2PKH address hash)
@@ -66,7 +64,7 @@ impl u160 {
     ///
     /// # Examples
     /// ```
-    /// # use anyhow::Result;
+    /// # use zewif_zcashd::Result;
     /// # use zewif_zcashd::zcashd_wallet::{u160, U160_SIZE};
     /// # fn example() -> Result<()> {
     /// // Valid slice (exactly 20 bytes)
@@ -92,9 +90,13 @@ impl u160 {
 impl TryFrom<&[u8]> for u160 {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &[u8]) -> std::result::Result<Self, Self::Error> {
         if bytes.len() != U160_SIZE {
-            bail!("Invalid data length: expected 20, got {}", bytes.len());
+            return Err(Error::InvalidLength {
+                kind: "u160",
+                expected: ExpectedLengths::Single(U160_SIZE),
+                actual: bytes.len(),
+            });
         }
         let mut a = [0u8; U160_SIZE];
         a.copy_from_slice(bytes);
@@ -105,7 +107,7 @@ impl TryFrom<&[u8]> for u160 {
 impl TryFrom<&[u8; U160_SIZE]> for u160 {
     type Error = Error;
 
-    fn try_from(bytes: &[u8; U160_SIZE]) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &[u8; U160_SIZE]) -> std::result::Result<Self, Self::Error> {
         Ok(Self(*bytes))
     }
 }
@@ -113,7 +115,7 @@ impl TryFrom<&[u8; U160_SIZE]> for u160 {
 impl TryFrom<&Vec<u8>> for u160 {
     type Error = Error;
 
-    fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(bytes: &Vec<u8>) -> std::result::Result<Self, Self::Error> {
         Self::try_from(bytes.as_slice())
     }
 }

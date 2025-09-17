@@ -11,7 +11,8 @@ use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
     merkle_tree::{
-        HashSer, read_address, read_leu64_usize, read_nonempty_frontier_v1, read_position,
+        HashSer, read_address, read_leu64_usize, read_nonempty_frontier_v1,
+        read_position,
     },
 };
 
@@ -34,7 +35,9 @@ fn read_auth_fragment_v1<H: HashSer, R: Read>(
 }
 
 #[allow(clippy::needless_borrows_for_generic_args)]
-fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(mut reader: R) -> io::Result<MerkleBridge<H>> {
+fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(
+    mut reader: R,
+) -> io::Result<MerkleBridge<H>> {
     fn levels_required(pos: Position) -> impl Iterator<Item = Level> {
         (0u8..64).filter_map(move |i| {
             if u64::from(pos) == 0 || u64::from(pos) & (1 << i) == 0 {
@@ -98,7 +101,9 @@ fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(mut reader: R) -> io::Resul
 }
 
 #[allow(clippy::needless_borrows_for_generic_args)]
-fn read_bridge_v2<H: HashSer + Ord + Clone, R: Read>(mut reader: R) -> io::Result<MerkleBridge<H>> {
+fn read_bridge_v2<H: HashSer + Ord + Clone, R: Read>(
+    mut reader: R,
+) -> io::Result<MerkleBridge<H>> {
     let prior_position = Optional::read(&mut reader, read_position)?;
     let tracking = Vector::read_collected(&mut reader, |r| read_address(r))?;
     let ommers = Vector::read_collected(&mut reader, |mut r| {
@@ -131,7 +136,10 @@ fn read_bridge<H: HashSer + Ord + Clone, R: Read>(
             SER_V2 => read_bridge_v2(&mut reader),
             flag => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Unrecognized bridge serialization version: {:?}", flag),
+                format!(
+                    "Unrecognized bridge serialization version: {:?}",
+                    flag
+                ),
             )),
         },
         other => Err(io::Error::new(
@@ -177,7 +185,9 @@ fn read_checkpoint_v2<R: Read>(
 
 /// Reads a [`bridgetree::Checkpoint`] as encoded from the `bridgetree` version `0.2.0`
 /// version of the data structure.
-fn read_checkpoint_v3<R: Read>(mut reader: R) -> io::Result<Checkpoint<BlockHeight>> {
+fn read_checkpoint_v3<R: Read>(
+    mut reader: R,
+) -> io::Result<Checkpoint<BlockHeight>> {
     Ok(Checkpoint::from_parts(
         BlockHeight::from(reader.read_u32::<LittleEndian>()?),
         read_leu64_usize(&mut reader)?,
@@ -202,15 +212,22 @@ fn read_checkpoint_v3<R: Read>(mut reader: R) -> io::Result<Checkpoint<BlockHeig
 /// semantics.
 #[allow(clippy::needless_borrows_for_generic_args)]
 #[allow(clippy::redundant_closure)]
-pub(crate) fn read_tree<H: Hashable + HashSer + Ord + Clone, const DEPTH: u8, R: Read>(
+pub(crate) fn read_tree<
+    H: Hashable + HashSer + Ord + Clone,
+    const DEPTH: u8,
+    R: Read,
+>(
     mut reader: R,
 ) -> io::Result<BridgeTree<H, BlockHeight, DEPTH>> {
     let tree_version = reader.read_u8()?;
-    let prior_bridges = Vector::read(&mut reader, |r| read_bridge(r, tree_version))?;
-    let current_bridge = Optional::read(&mut reader, |r| read_bridge(r, tree_version))?;
-    let saved: BTreeMap<Position, usize> = Vector::read_collected(&mut reader, |mut r| {
-        Ok((read_position(&mut r)?, read_leu64_usize(&mut r)?))
-    })?;
+    let prior_bridges =
+        Vector::read(&mut reader, |r| read_bridge(r, tree_version))?;
+    let current_bridge =
+        Optional::read(&mut reader, |r| read_bridge(r, tree_version))?;
+    let saved: BTreeMap<Position, usize> =
+        Vector::read_collected(&mut reader, |mut r| {
+            Ok((read_position(&mut r)?, read_leu64_usize(&mut r)?))
+        })?;
 
     let checkpoints = match tree_version {
         SER_V1 => {
@@ -233,7 +250,9 @@ pub(crate) fn read_tree<H: Hashable + HashSer + Ord + Clone, const DEPTH: u8, R:
                 read_checkpoint_v2(r, BlockHeight::from(fake_checkpoint_id))
             })
         }
-        SER_V3 => Vector::read_collected(&mut reader, |r| read_checkpoint_v3(r)),
+        SER_V3 => {
+            Vector::read_collected(&mut reader, |r| read_checkpoint_v3(r))
+        }
         flag => Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Unrecognized tree serialization version: {:?}", flag),

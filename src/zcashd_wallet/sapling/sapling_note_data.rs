@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use zewif::{Blob, sapling::SaplingIncomingViewingKey};
 use crate::{parse, parser::prelude::*, zcashd_wallet::IncrementalWitness};
 

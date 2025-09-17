@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use std::collections::HashMap;
 use zcash_primitives::transaction::Transaction;
 use zewif::{BlockHash, Data};

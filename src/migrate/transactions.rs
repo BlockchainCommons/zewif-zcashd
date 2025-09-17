@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use crate::{Result, ResultExt};
 use std::collections::HashMap;
 use zewif::{BlockHash, TxBlockPosition, TxId};
 

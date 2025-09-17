@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use bridgetree::{BridgeTree, Position};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{

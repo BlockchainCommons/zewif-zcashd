@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 
 use zewif::{Blob32, NoQuotesDebugOption};
 

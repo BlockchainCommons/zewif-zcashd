@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use crate::{Error, Result};
 use zcash_keys::keys::UnifiedAddressRequest;
 use zip32::DiversifierIndex;
 
@@ -159,10 +159,9 @@ pub(crate) fn convert_unified_addresses(
         let ufvk = unified_accounts
             .full_viewing_keys
             .get(&metadata.key_id)
-            .ok_or(anyhow!(
-                "No UFVK was found for UFVK fingerprint {}",
-                metadata.key_id.to_hex()
-            ))?;
+            .ok_or_else(|| Error::MissingUfvk {
+                fingerprint: metadata.key_id.to_hex(),
+            })?;
 
         let ua_str = {
             let j = DiversifierIndex::from(<[u8; 11]>::from(metadata.diversifier_index.clone()));
@@ -171,9 +170,7 @@ pub(crate) fn convert_unified_addresses(
                 metadata.receiver_types.contains(&ReceiverType::Sapling),
                 metadata.receiver_types.contains(&ReceiverType::Orchard),
             )
-            .ok_or(anyhow!(
-                "Receiver types do not produce a valid Unified address."
-            ))?;
+            .ok_or(Error::InvalidReceiverCombination)?;
 
             ufvk.address(j, request)?
                 .encode(&wallet.network_info().to_address_encoding_network())

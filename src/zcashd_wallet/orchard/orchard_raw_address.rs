@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use zcash_address::{ToAddress, ZcashAddress, unified::Encoding};
 use zewif::{Blob, Blob32, Network};
 

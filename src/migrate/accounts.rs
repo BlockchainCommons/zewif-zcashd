@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 use std::collections::{HashMap, HashSet};
 use zewif::{Account, ProtocolAddress, TxId, sapling::SaplingExtendedSpendingKey};
 

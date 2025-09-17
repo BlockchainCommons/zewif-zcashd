@@ -1,12 +1,7 @@
-use anyhow::{Result, bail};
-
+use crate::{error::ExpectedLengths, parse, parser::prelude::*, Error, Result};
 use zewif::Data;
 
-use crate::{
-    parse,
-    parser::prelude::*,
-    zcashd_wallet::{CompactSize, u256},
-};
+use crate::zcashd_wallet::{CompactSize, u256};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PrivKey {
@@ -50,7 +45,11 @@ impl Parse for PrivKey {
     fn parse(p: &mut Parser) -> Result<Self> {
         let length = *parse!(p, CompactSize, "PrivKey size")?;
         if length != 214 && length != 279 {
-            bail!("Invalid PrivKey size: {}", length);
+            return Err(Error::InvalidLength {
+                kind: "privkey",
+                expected: ExpectedLengths::Multiple(&[214, 279]),
+                actual: length,
+            });
         }
         let data = parse!(p, data = length, "PrivKey")?;
         let hash = parse!(p, "PrivKey hash")?;

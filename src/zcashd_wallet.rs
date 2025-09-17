@@ -53,7 +53,8 @@ pub struct ZcashdWallet {
     orchard_note_commitment_tree: OrchardNoteCommitmentTree,
     orderposnext: Option<i64>,
     sapling_keys: SaplingKeys,
-    sapling_z_addresses: HashMap<SaplingZPaymentAddress, SaplingIncomingViewingKey>,
+    sapling_z_addresses:
+        HashMap<SaplingZPaymentAddress, SaplingIncomingViewingKey>,
     send_recipients: HashMap<TxId, Vec<RecipientMapping>>,
     sprout_keys: Option<SproutKeys>,
     wallet_keys: Option<WalletKeys>,
@@ -81,7 +82,10 @@ impl ZcashdWallet {
         orchard_note_commitment_tree: OrchardNoteCommitmentTree,
         orderposnext: Option<i64>,
         sapling_keys: SaplingKeys,
-        sapling_z_addresses: HashMap<SaplingZPaymentAddress, SaplingIncomingViewingKey>,
+        sapling_z_addresses: HashMap<
+            SaplingZPaymentAddress,
+            SaplingIncomingViewingKey,
+        >,
         send_recipients: HashMap<TxId, Vec<RecipientMapping>>,
         sprout_keys: Option<SproutKeys>,
         wallet_keys: Option<WalletKeys>,

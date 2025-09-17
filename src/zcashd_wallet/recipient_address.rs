@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::Result;
 
 use super::{
     ReceiverType, orchard::OrchardRawAddress, sapling::SaplingZPaymentAddress,

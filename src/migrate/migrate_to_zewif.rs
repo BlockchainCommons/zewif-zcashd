@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use crate::Result;
 
 use crate::{ZcashdWallet, zcashd_wallet::UfvkFingerprint};
 
