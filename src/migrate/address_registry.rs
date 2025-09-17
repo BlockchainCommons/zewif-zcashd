@@ -239,6 +239,7 @@ impl AddressRegistry {
     }
 
     /// Find all addresses belonging to a specific account
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn find_addresses_for_account(
         &self,
         account_id: &UfvkFingerprint,
@@ -256,11 +257,13 @@ impl AddressRegistry {
     }
 
     /// Returns the number of registered addresses
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn address_count(&self) -> usize {
         self.address_to_account.len()
     }
 
     /// Returns the number of unique accounts referenced
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn account_count(&self) -> usize {
         self.address_to_account
             .values()

@@ -17,6 +17,7 @@ use crate::parser::prelude::*;
 const ORCHARD_TREE_DEPTH: u8 = 32;
 
 /// A data structure holding chain positions for a single transaction.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct NotePositions {
     /// The height of the block containing the transaction.
@@ -27,6 +28,7 @@ struct NotePositions {
 }
 
 /// Represents the complete Orchard note commitment tree
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct OrchardNoteCommitmentTree {
     last_checkpoint: Option<BlockHeight>,
@@ -74,6 +76,7 @@ impl OrchardNoteCommitmentTree {
     }
 
     /// Convert to Zewif IncremetalWitness format
+    #[allow(dead_code)]
     fn extract_witness(
         &self,
         _position: Position,

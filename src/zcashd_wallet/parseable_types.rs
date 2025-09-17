@@ -364,7 +364,7 @@ impl Parse for zewif::BlockHash {
 impl Parse for zewif::MnemonicLanguage {
     fn parse(p: &mut Parser) -> Result<Self> {
         let value = parse!(p, "language value")?;
-        zewif::MnemonicLanguage::from_u32(value)
+        Ok(zewif::MnemonicLanguage::from_u32(value)?)
     }
 }
 

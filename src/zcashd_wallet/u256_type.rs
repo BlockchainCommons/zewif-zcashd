@@ -1,5 +1,5 @@
 use anyhow::{Error, Result, bail};
-use zewif::{Blob32, HexParseError};
+use zewif::Blob32;
 
 use crate::{parse, parser::prelude::*};
 
@@ -51,7 +51,7 @@ impl u256 {
     /// // Parse the hash of the Zcash genesis block.
     /// let block_hash = u256::from_hex("00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08").unwrap();
     /// ```
-    pub fn from_hex(hex: &str) -> Result<Self, HexParseError> {
+    pub fn from_hex(hex: &str) -> Result<Self> {
         let blob = Blob32::from_hex(hex)?;
         let mut bytes = <[u8; U256_SIZE]>::from(blob);
         bytes.reverse();

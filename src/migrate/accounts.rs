@@ -1,10 +1,9 @@
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
-use zcash_primitives::consensus::NetworkType;
 use zewif::{Account, ProtocolAddress, TxId, sapling::SaplingExtendedSpendingKey};
 
 use super::{
-    AddressId, AddressRegistry, keys::find_sapling_key_for_ivk, primitives::convert_network,
+    AddressId, AddressRegistry, keys::find_sapling_key_for_ivk,
     transaction_addresses::extract_transaction_addresses,
 };
 use crate::{
@@ -305,9 +304,6 @@ fn find_source_account_for_transaction(
     addresses: &HashSet<String>,
     address_registry: &AddressRegistry,
 ) -> Option<UfvkFingerprint> {
-    // Network for parsing addresses - use mainnet as default
-    let network = convert_network(NetworkType::Main); // WalletTx doesn't expose network directly
-
     // For outgoing transactions, check if we have explicit spending addresses
     if wallet_tx.is_from_me() {
         for address_str in addresses {
@@ -416,10 +412,10 @@ fn find_account_for_transparent_address(
 
 /// Find the account ID for a sapling address by looking at the viewing key relationships
 fn find_account_for_sapling_address(
-    wallet: &ZcashdWallet,
-    unified_accounts: &UnifiedAccounts,
+    _wallet: &ZcashdWallet,
+    _unified_accounts: &UnifiedAccounts,
     _address: &SaplingZPaymentAddress,
-    viewing_key: &zewif::sapling::SaplingIncomingViewingKey,
+    _viewing_key: &zewif::sapling::SaplingIncomingViewingKey,
 ) -> Option<UfvkFingerprint> {
     // Look up the full viewing key associated with this incoming viewing key
 
@@ -492,7 +488,7 @@ fn find_account_key_id_by_seed_fingerprint(
 }
 
 /// Initialize an AddressRegistry based on the unified accounts data
-pub fn initialize_address_registry(
+pub(crate) fn initialize_address_registry(
     wallet: &ZcashdWallet,
     unified_accounts: &UnifiedAccounts,
 ) -> Result<AddressRegistry> {

@@ -18,7 +18,7 @@ use crate::{
 /// This function handles transparent address assignment:
 /// - If registry is available, tries to map addresses to accounts
 /// - Otherwise assigns all addresses to the default account
-pub fn convert_transparent_addresses(
+pub(crate) fn convert_transparent_addresses(
     wallet: &ZcashdWallet,
     default_account: &mut zewif::Account,
     address_registry: Option<&AddressRegistry>,
@@ -72,7 +72,7 @@ pub fn convert_transparent_addresses(
 /// This function handles sapling address assignment:
 /// - If registry is available, tries to map addresses to accounts
 /// - Otherwise assigns all addresses to the default account
-pub fn convert_sapling_addresses(
+pub(crate) fn convert_sapling_addresses(
     wallet: &ZcashdWallet,
     default_account: &mut zewif::Account,
     address_registry: Option<&AddressRegistry>,
@@ -140,7 +140,7 @@ pub fn convert_sapling_addresses(
 /// - Extracts unified addresses from UnifiedAddressMetadata
 /// - Preserves diversifier indices and receiver types
 /// - Assigns unified addresses to appropriate accounts using the registry
-pub fn convert_unified_addresses(
+pub(crate) fn convert_unified_addresses(
     wallet: &ZcashdWallet,
     default_account: &mut zewif::Account,
     address_registry: Option<&AddressRegistry>,

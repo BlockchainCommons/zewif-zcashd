@@ -378,11 +378,3 @@ fn is_likely_change_output(wallet: &ZcashdWallet, address: &str) -> bool {
     // If it's in our wallet but doesn't have a name or purpose, it's likely change
     true
 }
-
-/// Check if a nullifier belongs to a specific address
-fn is_nullifier_for_address(_wallet: &ZcashdWallet, _nullifier_hex: &str, _address: &str) -> bool {
-    // In a production implementation, this would check if the nullifier was derived
-    // from notes sent to the given address. For now, this is a placeholder.
-    // TODO: Implement proper nullifier-to-address mapping if needed
-    false
-}
