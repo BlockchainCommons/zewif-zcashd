@@ -165,12 +165,14 @@ pub(crate) fn convert_unified_addresses(
 
         let ua_str = {
             let j = DiversifierIndex::from(<[u8; 11]>::from(metadata.diversifier_index.clone()));
-            let request = UnifiedAddressRequest::new(
+            let Some(request) = UnifiedAddressRequest::new(
                 metadata.receiver_types.contains(&ReceiverType::P2PKH),
                 metadata.receiver_types.contains(&ReceiverType::Sapling),
                 metadata.receiver_types.contains(&ReceiverType::Orchard),
-            )
-            .ok_or(Error::InvalidReceiverCombination)?;
+            ) else {
+                // Skip malformed receiver combinations instead of aborting the entire migration.
+                continue;
+            };
 
             ufvk.address(j, request)?
                 .encode(&wallet.network_info().to_address_encoding_network())

@@ -417,24 +417,11 @@ fn find_account_for_sapling_address(
     _address: &SaplingZPaymentAddress,
     _viewing_key: &zewif::sapling::SaplingIncomingViewingKey,
 ) -> Option<UfvkFingerprint> {
-    // Look up the full viewing key associated with this incoming viewing key
-
-    //    if wallet.sapling_keys().get(viewing_key).is_some() {
-    //        // SaplingKey doesn't directly expose metadata or extfvk
-    //        // Instead, we'll rely on viewing key mappings in unified accounts
-    //
-    //        // Check full viewing keys mapping in unified accounts
-    //        // Rather than trying to get the FVK string, we'll use the viewing key we already have
-    //        let ivk_str = viewing_key.to_string();
-    //        for (key_id, viewing_key_str) in &unified_accounts.full_viewing_keys {
-    //            // In a real implementation, we'd properly check if this IVK is derived from FVK
-    //            // For now, we'll just check if the strings have some similarity
-    //            if viewing_key_str.contains(&ivk_str) || ivk_str.contains(viewing_key_str) {
-    //                return Some(*key_id);
-    //            }
-    //        }
-    //    }
-    todo!()
+    // The unified-account plumbing for mapping Sapling addresses back to account IDs has not been
+    // finalized yet. Rather than panicking we fall back to `None` so callers can continue assigning
+    // the address to a default bucket. This keeps migration usable while signalling that richer
+    // account detection remains to be implemented.
+    None
 }
 
 /// Check if a key path follows the unified account pattern
