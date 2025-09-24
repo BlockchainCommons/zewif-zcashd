@@ -158,7 +158,8 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl Error {
-    /// Helper for constructing a boxed-context variant without repeating boilerplate.
+    /// Helper for constructing a boxed-context variant without repeating
+    /// boilerplate.
     pub fn with_context(
         source: impl StdError + Send + Sync + 'static,
         message: impl Into<Cow<'static, str>>,

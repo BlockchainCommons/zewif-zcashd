@@ -28,12 +28,12 @@ pub mod sprout;
 pub mod transparent;
 
 use std::collections::HashMap;
-use zewif::{Bip39Mnemonic, Network, TxId, sapling::SaplingIncomingViewingKey};
 
 use orchard::OrchardNoteCommitmentTree;
 use sapling::{SaplingKeys, SaplingZPaymentAddress};
 use sprout::SproutKeys;
 use transparent::{KeyPoolEntry, Keys, PubKey, WalletKeys};
+use zewif::{Bip39Mnemonic, Network, TxId, sapling::SaplingIncomingViewingKey};
 
 #[derive(Debug)]
 pub struct ZcashdWallet {
@@ -131,29 +131,17 @@ impl ZcashdWallet {
         self.bestblock_nomerkle.as_ref()
     }
 
-    pub fn bestblock(&self) -> &BlockLocator {
-        &self.bestblock
-    }
+    pub fn bestblock(&self) -> &BlockLocator { &self.bestblock }
 
-    pub fn client_version(&self) -> &ClientVersion {
-        &self.client_version
-    }
+    pub fn client_version(&self) -> &ClientVersion { &self.client_version }
 
-    pub fn default_key(&self) -> &PubKey {
-        &self.default_key
-    }
+    pub fn default_key(&self) -> &PubKey { &self.default_key }
 
-    pub fn key_pool(&self) -> &HashMap<i64, KeyPoolEntry> {
-        &self.key_pool
-    }
+    pub fn key_pool(&self) -> &HashMap<i64, KeyPoolEntry> { &self.key_pool }
 
-    pub fn keys(&self) -> &Keys {
-        &self.keys
-    }
+    pub fn keys(&self) -> &Keys { &self.keys }
 
-    pub fn min_version(&self) -> &ClientVersion {
-        &self.min_version
-    }
+    pub fn min_version(&self) -> &ClientVersion { &self.min_version }
 
     pub fn legacy_hd_seed(&self) -> Option<&LegacySeed> {
         self.legacy_hd_seed.as_ref()
@@ -163,25 +151,17 @@ impl ZcashdWallet {
         &self.mnemonic_hd_chain
     }
 
-    pub fn bip39_mnemonic(&self) -> &Bip39Mnemonic {
-        &self.bip39_mnemonic
-    }
+    pub fn bip39_mnemonic(&self) -> &Bip39Mnemonic { &self.bip39_mnemonic }
 
-    pub fn network_info(&self) -> &NetworkInfo {
-        &self.network_info
-    }
+    pub fn network_info(&self) -> &NetworkInfo { &self.network_info }
 
     pub fn orchard_note_commitment_tree(&self) -> &OrchardNoteCommitmentTree {
         &self.orchard_note_commitment_tree
     }
 
-    pub fn orderposnext(&self) -> Option<i64> {
-        self.orderposnext
-    }
+    pub fn orderposnext(&self) -> Option<i64> { self.orderposnext }
 
-    pub fn sapling_keys(&self) -> &SaplingKeys {
-        &self.sapling_keys
-    }
+    pub fn sapling_keys(&self) -> &SaplingKeys { &self.sapling_keys }
 
     pub fn sapling_z_addresses(
         &self,
@@ -209,13 +189,9 @@ impl ZcashdWallet {
         &self.unified_accounts
     }
 
-    pub fn witnesscachesize(&self) -> i64 {
-        self.witnesscachesize
-    }
+    pub fn witnesscachesize(&self) -> i64 { self.witnesscachesize }
 }
 
 impl ZcashdWallet {
-    pub fn network(&self) -> Network {
-        self.network_info.network()
-    }
+    pub fn network(&self) -> Network { self.network_info.network() }
 }

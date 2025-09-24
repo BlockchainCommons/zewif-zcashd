@@ -6,8 +6,10 @@
 //!
 //! ## Included Components
 //!
-//! - **Core Parser Types**: The `Parser` struct and `Parse` trait from `parser_impl`
-//! - **Parseable Type Implementations**: Standard parsers from `parseable_types`
+//! - **Core Parser Types**: The `Parser` struct and `Parse` trait from
+//!   `parser_impl`
+//! - **Parseable Type Implementations**: Standard parsers from
+//!   `parseable_types`
 //!
 //! ## Usage
 //!
@@ -28,7 +30,8 @@
 //! ```
 //!
 //! This prelude pattern follows Rust's convention (like the standard library's
-//! `std::prelude`) of providing the most commonly needed imports in a single module.
+//! `std::prelude`) of providing the most commonly needed imports in a single
+//! module.
 
 #[doc(hidden)]
 pub use super::parser_impl::*;

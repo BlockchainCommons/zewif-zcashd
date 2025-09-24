@@ -1,9 +1,9 @@
 /// A macro for parsing binary data with context-aware error messages.
 ///
-/// The `parse!` macro provides a convenient way to parse binary data from a parser
-/// or buffer while adding helpful context information to any errors that might occur.
-/// It works with types that implement the `Parse` or `ParseWithParam` traits, or with
-/// specialized parsing functions.
+/// The `parse!` macro provides a convenient way to parse binary data from a
+/// parser or buffer while adding helpful context information to any errors that
+/// might occur. It works with types that implement the `Parse` or
+/// `ParseWithParam` traits, or with specialized parsing functions.
 ///
 /// # Usage Patterns
 ///
@@ -34,8 +34,8 @@
 /// ```
 ///
 /// ## Parsing with Parameters
-/// Parse a type that implements `ParseWithParam` and needs additional parameters:
-/// ```no_run
+/// Parse a type that implements `ParseWithParam` and needs additional
+/// parameters: ```no_run
 /// # use zewif_zcashd::{parser::prelude::*, parse};
 /// # use zewif_zcashd::Result;
 /// #
@@ -51,15 +51,15 @@
 /// # Ok(())
 /// # }
 /// ```
-///
+/// 
 /// # Error Handling
 /// The macro automatically adds context to errors, making debugging easier by
 /// describing what was being parsed when an error occurred.
 ///
 /// # Relation to ZCash Data Formats
-/// This macro is particularly useful when parsing ZCash wallet and transaction data,
-/// which often involves nested structures with complex parsing rules. The context
-/// provided helps identify which part of a structure failed to parse.
+/// This macro is particularly useful when parsing ZCash wallet and transaction
+/// data, which often involves nested structures with complex parsing rules. The
+/// context provided helps identify which part of a structure failed to parse.
 #[macro_export]
 macro_rules! parse {
     (buf = $buf:expr, $type:ty, $context:expr) => {{
@@ -145,7 +145,8 @@ macro_rules! blob_parse {
         impl $crate::parser::Parse for $name {
             /// Parses this type from a binary data stream.
             ///
-            /// This implementation allows the type to be used with the `parse!` macro.
+            /// This implementation allows the type to be used with the `parse!`
+            /// macro.
             fn parse(
                 parser: &mut $crate::parser::Parser,
             ) -> $crate::Result<Self> {
@@ -163,9 +164,9 @@ macro_rules! data_parse {
         impl $crate::parser::Parse for $name {
             /// Parses this type from a binary data stream.
             ///
-            /// This implementation allows the type to be used with the `parse!` macro.
-            /// The data is parsed as a length-prefixed byte array using a `CompactSize`
-            /// value to indicate the length.
+            /// This implementation allows the type to be used with the `parse!`
+            /// macro. The data is parsed as a length-prefixed byte array
+            /// using a `CompactSize` value to indicate the length.
             fn parse(
                 parser: &mut $crate::parser::Parser,
             ) -> $crate::Result<Self> {
@@ -182,9 +183,9 @@ macro_rules! string_parse {
         impl $crate::parser::Parse for $name {
             /// Parses this type from a binary data stream.
             ///
-            /// This implementation allows the type to be used with the `parse!` macro.
-            /// The string is assumed to be encoded in the binary format as a length-prefixed
-            /// UTF-8 string.
+            /// This implementation allows the type to be used with the `parse!`
+            /// macro. The string is assumed to be encoded in the binary
+            /// format as a length-prefixed UTF-8 string.
             fn parse(p: &mut $crate::parser::Parser) -> $crate::Result<Self> {
                 Ok(Self($crate::parse!(p, String, "string")?))
             }

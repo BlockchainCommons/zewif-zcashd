@@ -1,11 +1,13 @@
 //! Utilities for reading zcashd-wallet-encoded `BridgeTree` values.
 //!
 //! Copied from https://github.com/zcash/zcash/blob/v6.2.0/src/rust/src/incremental_merkle_tree.rs
-use byteorder::{LittleEndian, ReadBytesExt};
-use std::collections::{BTreeMap, BTreeSet};
-use std::io::{self, Read};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    io::{self, Read},
+};
 
 use bridgetree::{BridgeTree, Checkpoint, MerkleBridge};
+use byteorder::{LittleEndian, ReadBytesExt};
 use incrementalmerkletree::{Address, Hashable, Level, Position};
 use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
@@ -20,9 +22,9 @@ const SER_V1: u8 = 1;
 const SER_V2: u8 = 2;
 const SER_V3: u8 = 3;
 
-/// Reads part of the information required to part of a construct a `bridgetree` version `0.3.0`
-/// [`MerkleBridge`] as encoded from the `incrementalmerkletree` version `0.3.0` version of the
-/// `AuthFragment` data structure.
+/// Reads part of the information required to part of a construct a `bridgetree`
+/// version `0.3.0` [`MerkleBridge`] as encoded from the `incrementalmerkletree`
+/// version `0.3.0` version of the `AuthFragment` data structure.
 #[allow(clippy::redundant_closure)]
 fn read_auth_fragment_v1<H: HashSer, R: Read>(
     mut reader: R,
@@ -71,14 +73,14 @@ fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(
     let mut tracking = BTreeSet::new();
     let mut ommers = BTreeMap::new();
     for (pos, levels_observed, values) in fragments.into_iter() {
-        // get the list of levels at which we expect to find future ommers for the position being
-        // tracked
+        // get the list of levels at which we expect to find future ommers for
+        // the position being tracked
         let levels = levels_required(pos)
             .take(levels_observed + 1)
             .collect::<Vec<_>>();
 
-        // track the currently-incomplete parent of the tracked position at max height (the one
-        // we're currently building)
+        // track the currently-incomplete parent of the tracked position at max
+        // height (the one we're currently building)
         tracking.insert(Address::above_position(*levels.last().unwrap(), pos));
 
         for (level, ommer_value) in levels
@@ -128,8 +130,9 @@ fn read_bridge<H: HashSer + Ord + Clone, R: Read>(
     match tree_version {
         SER_V2 => read_bridge_v1(&mut reader),
         SER_V3 => match reader.read_u8()? {
-            // This is test-only because it's needed for reading the serialized test vectors, but
-            // should never appear in persistent zcashd wallet data (and if we encounter it there,
+            // This is test-only because it's needed for reading the serialized
+            // test vectors, but should never appear in persistent
+            // zcashd wallet data (and if we encounter it there,
             // we treat it as an error).
             #[cfg(test)]
             SER_V1 => read_bridge_v1(&mut reader),
@@ -149,18 +152,20 @@ fn read_bridge<H: HashSer + Ord + Clone, R: Read>(
     }
 }
 
-// SER_V1 checkpoint serialization encoded checkpoint data from the `Checkpoint` type as defined in
-// `incrementalmerkletree` version `0.3.0-beta-2`. This version was only used in testnet wallets
-// prior to NU5 launch. As such, we no longer support reading v1 checkpoint data, and therefore we
-// do not define any `read_checkpoint_v1`.
+// SER_V1 checkpoint serialization encoded checkpoint data from the `Checkpoint`
+// type as defined in `incrementalmerkletree` version `0.3.0-beta-2`. This
+// version was only used in testnet wallets prior to NU5 launch. As such, we no
+// longer support reading v1 checkpoint data, and therefore we do not define any
+// `read_checkpoint_v1`.
 
-/// Reads a [`bridgetree::Checkpoint`] as encoded from the `incrementalmerkletree` version `0.3.0`
-/// version of the data structure.
+/// Reads a [`bridgetree::Checkpoint`] as encoded from the
+/// `incrementalmerkletree` version `0.3.0` version of the data structure.
 ///
-/// The v2 checkpoint serialization does not include any sort of checkpoint identifier. Under
-/// ordinary circumstances, the checkpoint ID will be the block height at which the checkpoint was
-/// created, but since we don't have any source for this information, we require the caller to
-/// provide it; any unique identifier will do so long as the identifiers are ordered correctly.
+/// The v2 checkpoint serialization does not include any sort of checkpoint
+/// identifier. Under ordinary circumstances, the checkpoint ID will be the
+/// block height at which the checkpoint was created, but since we don't have
+/// any source for this information, we require the caller to provide it; any
+/// unique identifier will do so long as the identifiers are ordered correctly.
 #[allow(clippy::needless_borrows_for_generic_args)]
 fn read_checkpoint_v2<R: Read>(
     mut reader: R,
@@ -183,8 +188,8 @@ fn read_checkpoint_v2<R: Read>(
     ))
 }
 
-/// Reads a [`bridgetree::Checkpoint`] as encoded from the `bridgetree` version `0.2.0`
-/// version of the data structure.
+/// Reads a [`bridgetree::Checkpoint`] as encoded from the `bridgetree` version
+/// `0.2.0` version of the data structure.
 fn read_checkpoint_v3<R: Read>(
     mut reader: R,
 ) -> io::Result<Checkpoint<BlockHeight>> {
@@ -198,17 +203,20 @@ fn read_checkpoint_v3<R: Read>(
 
 /// Reads a [`BridgeTree`] value from its serialized form.
 ///
-/// [`BridgeTree`] values are expected to have been serialized with a leading version byte. Parsing
-/// behavior varies slightly based upon the serialization version.
+/// [`BridgeTree`] values are expected to have been serialized with a leading
+/// version byte. Parsing behavior varies slightly based upon the serialization
+/// version.
 ///
-/// SER_V1 checkpoint serialization encoded checkpoint data from the `Checkpoint` type as defined
-/// in `incrementalmerkletree` version `0.3.0-beta-2`. This version was only used in testnet
-/// wallets prior to NU5 launch. Reading `SER_V1` checkpoint data is not supported.
+/// SER_V1 checkpoint serialization encoded checkpoint data from the
+/// `Checkpoint` type as defined in `incrementalmerkletree` version
+/// `0.3.0-beta-2`. This version was only used in testnet wallets prior to NU5
+/// launch. Reading `SER_V1` checkpoint data is not supported.
 ///
-/// Checkpoint identifiers are `u32` values which for `SER_V3` serialization correspond to block
-/// heights; checkpoint identifiers were not present in `SER_V2` serialization, so when reading
-/// such data the returned identifiers will *not* correspond to block heights. As such, checkpoint
-/// ids should always be treated as opaque, totally ordered identifiers without additional
+/// Checkpoint identifiers are `u32` values which for `SER_V3` serialization
+/// correspond to block heights; checkpoint identifiers were not present in
+/// `SER_V2` serialization, so when reading such data the returned identifiers
+/// will *not* correspond to block heights. As such, checkpoint ids should
+/// always be treated as opaque, totally ordered identifiers without additional
 /// semantics.
 #[allow(clippy::needless_borrows_for_generic_args)]
 #[allow(clippy::redundant_closure)]
@@ -231,10 +239,12 @@ pub(crate) fn read_tree<
 
     let checkpoints = match tree_version {
         SER_V1 => {
-            // SER_V1 checkpoint serialization encoded checkpoint data from the `Checkpoint` type
-            // as defined in `incrementalmerkletree` version `0.3.0-beta-2`. This version was only
-            // used in testnet wallets prior to NU5 launch. As such, we no longer support reading
-            // v1 checkpoint data.
+            // SER_V1 checkpoint serialization encoded checkpoint data from the
+            // `Checkpoint` type as defined in
+            // `incrementalmerkletree` version `0.3.0-beta-2`. This version was
+            // only used in testnet wallets prior to NU5 launch. As
+            // such, we no longer support reading v1 checkpoint
+            // data.
             Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!(
@@ -301,9 +311,7 @@ mod tests {
     }
 
     impl Hashable for TestNode {
-        fn empty_leaf() -> Self {
-            Self(0)
-        }
+        fn empty_leaf() -> Self { Self(0) }
 
         fn combine(level: Level, a: &Self, b: &Self) -> Self {
             let mut hasher = DefaultHasher::new();
@@ -348,12 +356,14 @@ mod tests {
             let b2 = read_bridge(&buffer2[..], SER_V3).unwrap();
             assert_eq!(b.prior_position(), b2.prior_position());
             assert_eq!(b.frontier(), b2.frontier());
-            // Due to the changed nature of garbage collection, bridgetree-v0.2.0 and later
-            // MerkleBridge values may track elements that incrementalmerkletree-v0.3.0 bridges did
-            // not; in the case that we remove the mark on a leaf, the ommers being tracked related
-            // to that mark may be retained until the next garbage collection pass. Therefore, we
-            // can only verify that the legacy tracking set is fully contained in the new tracking
-            // set.
+            // Due to the changed nature of garbage collection,
+            // bridgetree-v0.2.0 and later MerkleBridge values may
+            // track elements that incrementalmerkletree-v0.3.0 bridges did
+            // not; in the case that we remove the mark on a leaf, the ommers
+            // being tracked related to that mark may be retained
+            // until the next garbage collection pass. Therefore, we
+            // can only verify that the legacy tracking set is fully contained
+            // in the new tracking set.
             assert!(b.tracking().is_superset(b2.tracking()));
             for (k, v) in b2.ommers() {
                 assert_eq!(b.ommers().get(k), Some(v));
