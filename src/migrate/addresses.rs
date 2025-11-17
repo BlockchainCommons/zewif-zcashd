@@ -1,14 +1,15 @@
-use crate::{Error, Result};
-use zcash_keys::keys::UnifiedAddressRequest;
-use zip32::DiversifierIndex;
-
 use std::collections::HashMap;
 
-use zewif::{Account, ProtocolAddress, UnifiedAddress, sapling::SaplingExtendedSpendingKey};
+use zcash_keys::keys::UnifiedAddressRequest;
+use zewif::{
+    Account, ProtocolAddress, UnifiedAddress,
+    sapling::SaplingExtendedSpendingKey,
+};
+use zip32::DiversifierIndex;
 
 use super::keys::find_sapling_key_for_ivk;
 use crate::{
-    ZcashdWallet,
+    Error, Result, ZcashdWallet,
     migrate::{AddressId, AddressRegistry},
     zcashd_wallet::{Address, ReceiverType, UfvkFingerprint},
 };
@@ -25,13 +26,16 @@ pub(crate) fn convert_transparent_addresses(
     accounts_map: &mut Option<&mut HashMap<UfvkFingerprint, Account>>,
 ) -> Result<()> {
     // Flag for multi-account mode
-    let multi_account_mode = address_registry.is_some() && accounts_map.is_some();
+    let multi_account_mode =
+        address_registry.is_some() && accounts_map.is_some();
 
     // Process address_names which contain transparent addresses
     for (zcashd_address, name) in wallet.address_names() {
         // Create address components
-        let transparent_address = zewif::transparent::Address::new(zcashd_address.clone());
-        let protocol_address = ProtocolAddress::Transparent(transparent_address);
+        let transparent_address =
+            zewif::transparent::Address::new(zcashd_address.clone());
+        let protocol_address =
+            ProtocolAddress::Transparent(transparent_address);
         let mut zewif_address = zewif::Address::new(protocol_address);
         zewif_address.set_name(name.clone());
 
@@ -47,18 +51,18 @@ pub(crate) fn convert_transparent_addresses(
             let registry = address_registry.unwrap();
             let addr_id = AddressId::Transparent(zcashd_address.clone().into());
 
-            if let Some(account_id) = registry.find_account(&addr_id) {
-                if let Some(accounts) = accounts_map.as_mut() {
-                    if let Some(target_account) = accounts.get_mut(account_id) {
-                        // Add to the specified account
-                        target_account.add_address(zewif_address.clone());
-                        assigned = true;
-                    }
-                }
+            if let Some(account_id) = registry.find_account(&addr_id)
+                && let Some(accounts) = accounts_map.as_mut()
+                && let Some(target_account) = accounts.get_mut(account_id)
+            {
+                // Add to the specified account
+                target_account.add_address(zewif_address.clone());
+                assigned = true;
             }
         }
 
-        // If not assigned to an account or in single-account mode, add to default account
+        // If not assigned to an account or in single-account mode, add to
+        // default account
         if !assigned {
             default_account.add_address(zewif_address);
         }
@@ -79,26 +83,31 @@ pub(crate) fn convert_sapling_addresses(
     accounts_map: &mut Option<&mut HashMap<UfvkFingerprint, Account>>,
 ) -> Result<()> {
     // Flag for multi-account mode
-    let multi_account_mode = address_registry.is_some() && accounts_map.is_some();
+    let multi_account_mode =
+        address_registry.is_some() && accounts_map.is_some();
 
     // Process sapling_z_addresses
     for (sapling_address, viewing_key) in wallet.sapling_z_addresses() {
         let address_str = sapling_address.to_string(wallet.network());
 
         // Create a new ShieldedAddress and preserve the incoming viewing key
-        // This is critical for maintaining the ability to detect incoming transactions
-        // Note: We preserve IVKs but not FVKs, as FVKs can be derived from spending keys when needed
-        let mut shielded_address = zewif::sapling::Address::new(address_str.clone());
+        // This is critical for maintaining the ability to detect incoming
+        // transactions Note: We preserve IVKs but not FVKs, as FVKs can
+        // be derived from spending keys when needed
+        let mut shielded_address =
+            zewif::sapling::Address::new(address_str.clone());
         shielded_address.set_incoming_viewing_key(viewing_key.to_owned()); // Preserve the IVK exactly as in source wallet
 
         // Add spending key if available in sapling_keys
-        if let Some(sapling_key) = find_sapling_key_for_ivk(wallet, viewing_key) {
+        if let Some(sapling_key) = find_sapling_key_for_ivk(wallet, viewing_key)
+        {
             shielded_address.set_spending_key(SaplingExtendedSpendingKey::new(
                 sapling_key.extsk().to_bytes(),
             ));
         }
 
-        let protocol_address = zewif::ProtocolAddress::Sapling(Box::new(shielded_address));
+        let protocol_address =
+            zewif::ProtocolAddress::Sapling(Box::new(shielded_address));
         let mut zewif_address = zewif::Address::new(protocol_address);
 
         // Set purpose if available - convert to Address type for lookup
@@ -114,18 +123,18 @@ pub(crate) fn convert_sapling_addresses(
             let registry = address_registry.unwrap();
             let addr_id = AddressId::Sapling(address_str.clone());
 
-            if let Some(account_id) = registry.find_account(&addr_id) {
-                if let Some(accounts) = accounts_map.as_mut() {
-                    if let Some(target_account) = accounts.get_mut(account_id) {
-                        // Add to the specified account
-                        target_account.add_address(zewif_address.clone());
-                        assigned = true;
-                    }
-                }
+            if let Some(account_id) = registry.find_account(&addr_id)
+                && let Some(accounts) = accounts_map.as_mut()
+                && let Some(target_account) = accounts.get_mut(account_id)
+            {
+                // Add to the specified account
+                target_account.add_address(zewif_address.clone());
+                assigned = true;
             }
         }
 
-        // If not assigned to an account or in single-account mode, add to default account
+        // If not assigned to an account or in single-account mode, add to
+        // default account
         if !assigned {
             default_account.add_address(zewif_address);
         }
@@ -149,9 +158,10 @@ pub(crate) fn convert_unified_addresses(
     // Only process if we have unified accounts
     let unified_accounts = wallet.unified_accounts();
 
-    // Multi-account mode is active when we have both a registry and accounts map
-    // TODO: figure out why this is being checked
-    let multi_account_mode = address_registry.is_some() && accounts_map.is_some();
+    // Multi-account mode is active when we have both a registry and accounts
+    // map TODO: figure out why this is being checked
+    let multi_account_mode =
+        address_registry.is_some() && accounts_map.is_some();
 
     // Process unified address metadata entries
     for metadata in &unified_accounts.address_metadata {
@@ -164,13 +174,16 @@ pub(crate) fn convert_unified_addresses(
             })?;
 
         let ua_str = {
-            let j = DiversifierIndex::from(<[u8; 11]>::from(metadata.diversifier_index.clone()));
+            let j = DiversifierIndex::from(<[u8; 11]>::from(
+                metadata.diversifier_index.clone(),
+            ));
             let Some(request) = UnifiedAddressRequest::new(
                 metadata.receiver_types.contains(&ReceiverType::P2PKH),
                 metadata.receiver_types.contains(&ReceiverType::Sapling),
                 metadata.receiver_types.contains(&ReceiverType::Orchard),
             ) else {
-                // Skip malformed receiver combinations instead of aborting the entire migration.
+                // Skip malformed receiver combinations instead of aborting the
+                // entire migration.
                 continue;
             };
 
@@ -182,18 +195,26 @@ pub(crate) fn convert_unified_addresses(
         let unified_address = UnifiedAddress::from_parts(
             ua_str.clone(),
             Some(metadata.diversifier_index.clone()),
-            account.map(|a| format!("m/32'/{}'/{}'", a.bip_44_coin_type(), a.zip32_account_id())),
+            account.map(|a| {
+                format!(
+                    "m/32'/{}'/{}'",
+                    a.bip_44_coin_type(),
+                    a.zip32_account_id()
+                )
+            }),
         );
 
-        // Try to find transparent and sapling components for this unified address
-        // from already processed addresses in the wallet
+        // Try to find transparent and sapling components for this unified
+        // address from already processed addresses in the wallet
 
         // Create a unified address protocol address
-        let zewif_address =
-            zewif::Address::new(ProtocolAddress::Unified(Box::new(unified_address)));
+        let zewif_address = zewif::Address::new(ProtocolAddress::Unified(
+            Box::new(unified_address),
+        ));
 
-        // Set purpose if available - though we may not have explicit purposes for unified addresses
-        // in current wallet structure, this is here for future compatibility
+        // Set purpose if available - though we may not have explicit purposes
+        // for unified addresses in current wallet structure, this is
+        // here for future compatibility
 
         // In multi-account mode, try to assign to the correct account
         let mut assigned = false;
@@ -203,29 +224,30 @@ pub(crate) fn convert_unified_addresses(
             let addr_id = AddressId::Unified(ua_str[0..20].to_string());
 
             if let Some(account_id) = registry.find_account(&addr_id) {
-                if let Some(accounts) = accounts_map.as_mut() {
-                    if let Some(target_account) = accounts.get_mut(account_id) {
-                        // Add to the specified account
-                        target_account.add_address(zewif_address.clone());
-                        assigned = true;
-                    }
+                if let Some(accounts) = accounts_map.as_mut()
+                    && let Some(target_account) = accounts.get_mut(account_id)
+                {
+                    // Add to the specified account
+                    target_account.add_address(zewif_address.clone());
+                    assigned = true;
                 }
             } else {
-                // Try with the Unified variant if UnifiedAccountAddress didn't work
+                // Try with the Unified variant if UnifiedAccountAddress didn't
+                // work
                 let addr_id = AddressId::Unified(ua_str);
-                if let Some(account_id) = registry.find_account(&addr_id) {
-                    if let Some(accounts) = accounts_map.as_mut() {
-                        if let Some(target_account) = accounts.get_mut(account_id) {
-                            // Add to the specified account
-                            target_account.add_address(zewif_address.clone());
-                            assigned = true;
-                        }
-                    }
+                if let Some(account_id) = registry.find_account(&addr_id)
+                    && let Some(accounts) = accounts_map.as_mut()
+                    && let Some(target_account) = accounts.get_mut(account_id)
+                {
+                    // Add to the specified account
+                    target_account.add_address(zewif_address.clone());
+                    assigned = true;
                 }
             }
         }
 
-        // If not assigned to an account or in single-account mode, add to default account
+        // If not assigned to an account or in single-account mode, add to
+        // default account
         if !assigned {
             default_account.add_address(zewif_address);
         }

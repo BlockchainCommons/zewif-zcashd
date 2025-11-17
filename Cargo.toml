@@ -21,17 +21,23 @@ uuid = "1.1"
 # `wallet.dat` encoded data, so these must be kept in sync.
 zcash_address = "0.6"
 zcash_encoding = "0.2"
-zcash_keys = { version = "0.4", features = ["transparent-inputs", "sapling", "orchard"] }
+zcash_keys = { version = "0.4", features = [
+    "transparent-inputs",
+    "sapling",
+    "orchard",
+] }
 zcash_primitives = "0.19"
 zcash_protocol = "0.4"
 zip32 = "0.1"
 orchard = "0.10"
-sapling = { package = "sapling-crypto", version = "0.3", features = ["temporary-zcashd"] }
+sapling = { package = "sapling-crypto", version = "0.3", features = [
+    "temporary-zcashd",
+] }
 incrementalmerkletree = "0.7"
 bridgetree = "0.6"
 
 [dev-dependencies]
-bc-rand = "^0.4.0"
+bc-rand = "^0.4.2"
 
 [features]
 default = []
